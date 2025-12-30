@@ -1,0 +1,12 @@
+
+Halo wildan....
+
+oke.. disini ada bebrapa kekurangan pada backend ini, posisi saat ini masih untuk handle register saja.
+Yang kurang
+1. Handle Ketika Orang Ingin Mengirimkan Ulang Link Aktivasi Akunnya
+2. Buat Ulang Kode OTP, ketika pengguna meminta kirim ulang kode otp dan pastikan juga bahwasanya, kode depan otp tidak mengandung angka 0
+3. Cari Tahu Untuk menggunakan golang migration
+4. Pada Send Email, pastikan context untuk subject itu berbeda berbeda
+5. Konfigurasi Tampilan Email Untuk Lebih Menarik Lagi!
+
+Selesai Ditulis Pada 30 Desember 2025 (16:41)
