@@ -36,18 +36,31 @@ func CompareHashPassword(hashedPassword string, password string) bool {
 	return true
 }
 
-func GenerateOTPCode() (otp string, err error) {
+func GenerateOTPCode() (string, error) {
 
-	otp = ""
+	max := big.NewInt(9000)
 
-	for i := 0; i < 4; i++ {
-		num, err := rand.Int(rand.Reader, big.NewInt(10))
+	num, err := rand.Int(rand.Reader, max)
 
-		if err != nil {
-			return "", err
-		}
-
-		otp += fmt.Sprintf("%d", num.Int64())
+	if err != nil {
+		return "", err
 	}
-	return otp, err
+
+	// Tambahkan 1000 agar rentangnya menjadi 1000 sampai 9999
+	otp := num.Int64() + 1000
+
+	return fmt.Sprintf("%d", otp), nil
+}
+
+func IsStringEmpty(message string) bool {
+	return message == ""
+}
+
+func IsMultipleStringEmpty(messages []string) bool {
+	for _, message := range messages {
+		if !IsStringEmpty(message) {
+			return false
+		}
+	}
+	return true
 }

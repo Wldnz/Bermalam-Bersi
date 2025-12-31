@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"bersi.bermalam.id/config"
+	"bersi.bermalam.id/models"
 	"bersi.bermalam.id/utils"
 	sendemail "bersi.bermalam.id/utils/sendEmail"
 	"github.com/gin-gonic/gin"
@@ -215,15 +216,19 @@ func sendOtpCode(
 	email string,
 	code_otp string,
 ) {
-	to := []string{email}
-	cc := []string{email}
-	message := fmt.Sprintf(`Hello, %s, 
+
+	data := &models.SenderEmailNeeded{
+		Subject: "Your Crendentials Was Valid!",
+		Message: fmt.Sprintf(`Hello, %s, 
 		You Have Logged To Our System!
 		Here The Code You Must Fill To Access Our System!
 		Code : %s
-	`, data_public.FirstName, code_otp)
+	`, data_public.FirstName, code_otp),
+		To: []string{email},
+		Cc: []string{email},
+	}
 
-	err := sendemail.SendEmail(to, cc, message)
+	err := sendemail.SendEmail(data)
 
 	if err != nil {
 		fmt.Println("There something error, when wan to send email")

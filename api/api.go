@@ -3,6 +3,7 @@ package api
 import (
 	"net/http"
 
+	"bersi.bermalam.id/api/admin"
 	"bersi.bermalam.id/api/auth/activate"
 	check_activation "bersi.bermalam.id/api/auth/check-activation"
 	checkcurrentsession "bersi.bermalam.id/api/auth/check-current-session"
@@ -43,5 +44,15 @@ func InitiliazeApi(g *gin.Engine) {
 	g.GET("/activate-account", activate.ActivateAccount)
 	g.GET("/check-activate-account", check_activation.CheckActivactionAccount)
 	g.GET("/check-current-session", checkcurrentsession.CheckCurrentSection)
+
+	// administrasi api
+
+	// tambahkan middleware willlllllllllllllllllllllllll 1 januari 2026 damn, 9 hari lagi deadline :D
+
+	g.GET("/admin/dashboard", admin.Dashboard)
+	g.GET("/admin/accounts", admin.GetAccounts)
+	g.GET("/admin/accounts/as", admin.GetDetailAccount)
+	g.PUT("/admin/accounts/as", admin.UpdateAccount)
+	g.DELETE("/admin/accounts/AS", admin.DeleteAccount)
 
 }

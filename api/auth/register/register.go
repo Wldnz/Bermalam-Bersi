@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"bersi.bermalam.id/config"
+	"bersi.bermalam.id/models"
 	"bersi.bermalam.id/utils"
 	sendemail "bersi.bermalam.id/utils/sendEmail"
 	"github.com/gin-gonic/gin"
@@ -162,18 +163,20 @@ func sendActivateToken(
 	email string,
 	token string,
 ) {
-	message := fmt.Sprintf(`Hello, %s\n
-		Congratulations, Your Account Has Succesfully Created! \n
+
+	data := &models.SenderEmailNeeded{
+		Subject: "Congratulations Your Account Has Succesfully Register!",
+		Message: fmt.Sprintf(`Hello, %s\n
+		Congratulations, Your Account Has Been Created! \n
 		Now Please Activate Your Account!
 		Click Link In Below!
 		<a href='http://localhost:8000/activate-account?token=%s&user_id=%d&email=%s'>Aktifkan Sekarang!</a>
-	`, name, token, user_id, email)
+	`, name, token, user_id, email),
+		To: to,
+		Cc: cc,
+	}
 
-	if err := sendemail.SendEmail(
-		to,
-		cc,
-		message,
-	); err != nil {
+	if err := sendemail.SendEmail(data); err != nil {
 		fmt.Println("There Something error When Wan To Send Into Email")
 		fmt.Println(err.Error())
 	}
