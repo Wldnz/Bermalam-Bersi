@@ -1,4 +1,4 @@
-package check_activation
+package auth
 
 import (
 	"net/http"

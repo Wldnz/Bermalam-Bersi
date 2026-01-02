@@ -1,41 +1,14 @@
-package login
+package auth
 
 import (
-	"fmt"
+	"database/sql"
 	"net/http"
 	"time"
 
 	"bersi.bermalam.id/config"
-	"bersi.bermalam.id/models"
 	"bersi.bermalam.id/utils"
-	sendemail "bersi.bermalam.id/utils/sendEmail"
 	"github.com/gin-gonic/gin"
 )
-
-type TokenSession struct {
-	UserID     int    `json:"id_user"`
-	CodeOTP    string `json:"code_otp"`
-	Token      string `json:"token"`
-	Active     int    `json:"active"`
-	ExpiredAt  int64  `json:"expired_at"`
-	IsRemember bool   `json:"is_remember"`
-}
-
-type LoginData struct {
-	Email      string `json:"email"`
-	Password   string `json:"password"`
-	IsRemember bool   `json:"is_remember"`
-	Role       string `json:"role"`
-}
-
-type ResultUser struct {
-	ID        int    `json:"id"`
-	FirstName string `json:"first_name"`
-	Role      string `json:"role"`
-	Verified  int    `json:"verified"`
-	Password  string `json:"password"`
-	Status    string `json:"status"`
-}
 
 func Login(c *gin.Context) {
 
@@ -70,7 +43,7 @@ func Login(c *gin.Context) {
 	`, data.Email, data.Role).Scan(&userLogged.ID, &userLogged.FirstName, &userLogged.Role, &userLogged.Verified, &userLogged.Password, &userLogged.Status)
 
 	if err != nil {
-		if err.Error() == "sql: no rows in result set" {
+		if err == sql.ErrNoRows {
 			c.JSON(http.StatusNotFound, gin.H{
 				"message":     "Email Yang Dimasukkan Tidak Terdaftar",
 				"status_code": http.StatusNotFound,
@@ -193,7 +166,7 @@ func Login(c *gin.Context) {
 				SameSite: http.SameSiteLaxMode,
 			})
 
-			go sendOtpCode(&userLogged, data.Email, code_otp)
+			go sendOtpCode(data.Email, userLogged.FirstName, code_otp)
 
 		} else {
 			c.JSON(http.StatusInternalServerError, gin.H{
@@ -211,27 +184,27 @@ func Login(c *gin.Context) {
 	})
 }
 
-func sendOtpCode(
-	data_public *ResultUser,
-	email string,
-	code_otp string,
-) {
+// func sendOtpCode(
+// 	data_public *ResultUser,
+// 	email string,
+// 	code_otp string,
+// ) {
 
-	data := &models.SenderEmailNeeded{
-		Subject: "Your Crendentials Was Valid!",
-		Message: fmt.Sprintf(`Hello, %s, 
-		You Have Logged To Our System!
-		Here The Code You Must Fill To Access Our System!
-		Code : %s
-	`, data_public.FirstName, code_otp),
-		To: []string{email},
-		Cc: []string{email},
-	}
+// 	data := &models.SenderEmailNeeded{
+// 		Subject: "Your Crendentials Was Valid!",
+// 		Message: fmt.Sprintf(`Hello, %s,
+// 		You Have Logged To Our System!
+// 		Here The Code You Must Fill To Access Our System!
+// 		Code : %s
+// 	`, data_public.FirstName, code_otp),
+// 		To: []string{email},
+// 		Cc: []string{email},
+// 	}
 
-	err := sendemail.SendEmail(data)
+// 	err := sendemail.SendEmail(data)
 
-	if err != nil {
-		fmt.Println("There something error, when wan to send email")
-		fmt.Println(err.Error())
-	}
-}
+// 	if err != nil {
+// 		fmt.Println("There something error, when wan to send email")
+// 		fmt.Println(err.Error())
+// 	}
+// }

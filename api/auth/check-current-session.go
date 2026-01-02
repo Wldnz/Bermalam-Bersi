@@ -1,4 +1,4 @@
-package checkcurrentsession
+package auth
 
 import (
 	"net/http"
@@ -7,14 +7,6 @@ import (
 	"bersi.bermalam.id/config"
 	"github.com/gin-gonic/gin"
 )
-
-type ResultUser struct {
-	ID        int    `json:"id"`
-	FirstName string `json:"first_name"`
-	Role      string `json:"role"`
-	Verified  int    `json:"verified"`
-	Status    string `json:"status"`
-}
 
 func CheckCurrentSection(c *gin.Context) {
 

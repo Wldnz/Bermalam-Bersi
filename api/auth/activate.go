@@ -1,4 +1,4 @@
-package activate
+package auth
 
 import (
 	"database/sql"
@@ -12,23 +12,6 @@ import (
 	sendemail "bersi.bermalam.id/utils/sendEmail"
 	"github.com/gin-gonic/gin"
 )
-
-type ResultCheckingToken struct {
-	ID     int    `json:"id"`
-	UserID int    `json:"id_user"`
-	Token  string `json:"token"`
-}
-
-type TokenSession struct {
-	ID         int    `json:"id"`
-	FirstName  string `json:"first_name"`
-	Email      string `json:"email"`
-	CodeOTP    int    `json:"code_otp"`
-	Token      string `json:"token"`
-	Active     int    `json:"active"`
-	ExpiredAt  int64  `json:"expired_at"`
-	IsRemember bool   `json:"is_remember"`
-}
 
 func ActivateAccount(c *gin.Context) {
 

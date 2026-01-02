@@ -1,4 +1,4 @@
-package register
+package auth
 
 import (
 	"database/sql"
@@ -13,15 +13,6 @@ import (
 	sendemail "bersi.bermalam.id/utils/sendEmail"
 	"github.com/gin-gonic/gin"
 )
-
-type RegisterMitrAccount struct {
-	FirstName string `json:"first_name"`
-	LastName  string `json:"last_name"`
-	Email     string `json:"email"`
-	PhoneCode int    `json:"phone_country_code"`
-	Phone     string `json:"phone"`
-	Password  string `json:"password"`
-}
 
 func RegisterMitra(c *gin.Context) {
 

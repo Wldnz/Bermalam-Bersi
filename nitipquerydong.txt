@@ -1,0 +1,14 @@
+
+ini query untuk dapetin data detail pengguna, namun karena banyak dat ayang tidak ada maka, ya gak muncul semuanya damn it
+"SELECT u.id as id_user, u.first_name, u.last_name, u.email, u.phone_country_code ,u.phone, u.role, u.status, u.verified, u.verified_at, u.created_at, u.updated_at,
+		ui.id as id_user_image, ui.url as image_url, 
+			uid.id as id_user_identification, uid.document_url as document_url, uid.reason, uid.status as identification_status,
+				ua.id as id_user_addres, ua.address, ua.zip_code, ua.country, ua.city
+	FROM users u 
+		INNER JOIN user_images ui 
+			ON ui.id_user = u.id
+				INNER JOIN user_identification uid
+					ON uid.id_user = u.id
+						INNER JOIN user_address ua
+							ON ua.id_user = u.id
+								WHERE u.id = %s`, user_id"
