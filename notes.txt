@@ -28,3 +28,36 @@ untuk lebih cepet exec command
 goose -dir migrations mysql "user:password@/dbname" [command]
 
 buat middleware wil!
+
+================================
+TODO HARI INI (3 JANUARI 2026, GW MULAI JAM 9 PAGI PAS)
+
+1. Fix Email Sending (done)
+2. Buat CRUD ACCOUNT (done)
+kurang management password dan verified data...
+done in 3 Januari 2026
+========================================
+Progress In 4 Januari 2026
+3. Verifikasi Pengguna (dari admin)?
+4. Management Hotel (crud) (on going)
+5. Management Transaction ()
+6. Tampilkan Data Hotel (sisi user)
+Todo Besok... Itu Gw Nyelesain USER INTERFACE
+
+masukan ke dalam database ini
+hotel_information
+ - role_charge ('hotel_owner', 'other person') Enum
+ - reason ('Komisi yang ditawarkan rendah') text
+ - haveExperience smallint default:0
+ - previousManageIsAlone smallin default:0
+ - acceptFreeCancelled smallint default:0
+ - howLongAcceptCancelled bigint default:0
+ - acceptRefund small int default:0
+ - requirement_refund enum ('nothing', 'dp', 'full_paid')
+created dan updated_wajib ya....
+besok gw lanjut ini wkkwk, udh ngantuk... (3 januari 2026 - 23:32)
+hotel_personal_information
+ npwp varchar
+ bank_name varchar
+ bank_account varchar
+ bank_account_owned_by varchar

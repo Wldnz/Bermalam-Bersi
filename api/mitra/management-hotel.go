@@ -1,0 +1,5 @@
+package mitra
+
+func GetAllData(){
+	
+}

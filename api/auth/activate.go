@@ -50,9 +50,21 @@ func ActivateAccount(c *gin.Context) {
 			// berhasil akan mengirimkan websocket bahwasanya aktivasi berhasil!
 
 			if err != nil {
-				response.Message = "There Something Error When Checking Token"
-				response.StatusCode = http.StatusInternalServerError
-				response.Error = err.Error()
+				if err == sql.ErrNoRows {
+					response.Message = "Cannot Validate Token, May Account Been Verified?"
+					response.StatusCode = http.StatusNotFound
+					response.Error = err.Error()
+
+					c.SetCookieData(&http.Cookie{
+						Name:   "verification-token",
+						MaxAge: -1,
+					})
+
+				} else {
+					response.Message = "There Something Error When Checking Token"
+					response.StatusCode = http.StatusInternalServerError
+					response.Error = err.Error()
+				}
 			}
 
 			if response.StatusCode == 0 {
@@ -126,6 +138,10 @@ func ActivateAccount(c *gin.Context) {
 								}
 
 								if response.StatusCode == 0 {
+									c.SetCookieData(&http.Cookie{
+										Name:   "verification-token",
+										MaxAge: -1,
+									})
 									c.SetCookieData(&http.Cookie{
 										Name:     "auth-token",
 										Value:    token,

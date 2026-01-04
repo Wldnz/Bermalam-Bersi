@@ -46,11 +46,28 @@ CREATE TABLE `hotel_location` (
 CREATE TABLE `detail_hotel` (
   `id` int PRIMARY KEY AUTO_INCREMENT,
   `id_hotel` int NOT NULL,
+  `npwp_number` varchar(16) NOT NULL,
+  `bank_name` varchar(255) NOT NULL,
+  `bank_account` varchar(255) NOT NULL COMMENT 'just like nomor rekening',
+  `bank_account_owned_by` varchar(255) NOT NULL,
+  `status` ENUM ('unverified', 'pending', 'verified') DEFAULT 'unverified',
+  `created_at` bigint NOT NULL,
+  `updated_at` bigint NOT NULL,
+  `created_by` int,
+  `updated_by` int
+);
+
+CREATE TABLE `hotel_operational` (
+  `id` int PRIMARY KEY AUTO_INCREMENT,
+  `id_hotel` int NOT NULL,
   `position_charge` varchar(60) NOT NULL,
   `reason_using` text NOT NULL,
-  `npwp_number` varchar(16) NOT NULL,
-  `bank_account` varchar(255) NOT NULL COMMENT 'just like nomo rekening',
-  `status` ENUM ('unverified', 'pending', 'verified') DEFAULT 'unverified',
+  `haveExperience` smallint DEFAULT 0,
+  `previousManageIsAlone` smallint DEFAULT 0,
+  `acceptFreeCancelled` smallint DEFAULT 0,
+  `howLongAcceptCancelled` bigint DEFAULT 0 COMMENT 'shold be timestamp and the timestamp is 12 hour or somethin',
+  `acceptRefund` smallint DEFAULT 0,
+  `requirement_refund` ENUM ('nothing', 'dp', 'full_paid') DEFAULT 'nothing',
   `created_at` bigint NOT NULL,
   `updated_at` bigint NOT NULL,
   `created_by` int,
@@ -102,6 +119,7 @@ CREATE TABLE `hotel_sanctions` (
 DROP TABLE IF EXISTS hotel_sanctions;
 DROP TABLE IF EXISTS sanctions;
 DROP TABLE IF EXISTS hotel_documents;
+DROP TABLE IF EXISTS hotel_operational;
 DROP TABLE IF EXISTS detail_hotel;
 DROP TABLE IF EXISTS hotel_location;
 DROP TABLE IF EXISTS hotel_images;

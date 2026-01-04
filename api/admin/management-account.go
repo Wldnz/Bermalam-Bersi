@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"fmt"
 	"net/http"
+	"os"
 	"strings"
 	"time"
 
@@ -13,6 +14,7 @@ import (
 	sendemail "bersi.bermalam.id/utils/sendEmail"
 	"bersi.bermalam.id/utils/storage"
 	"github.com/gin-gonic/gin"
+	_ "github.com/joho/godotenv/autoload"
 )
 
 type ResultUserAccount struct {
@@ -28,27 +30,56 @@ type RequestAccountData struct {
 	FirstName             string `form:"first_name" binding:"required"`
 	LastName              string `form:"last_name" binding:"required"`
 	Email                 string `form:"email" binding:"required"`
-	IsVerified            string `form:"is_verified" binding:"required"`
 	PhoneCountryCode      string `form:"phone_country_code" binding:"required"`
-	Phone                 int    `form:"phone" binding:"required"`
+	Phone                 string `form:"phone" binding:"required"`
 	Role                  string `form:"role" binding:"required"`
 	Password              string `form:"password"`
 	IsManualPassword      string `form:"is_manual_password" binding:"required"`
 	IsSendPasswordToEmail string `form:"is_send_password_to_email"`
 
 	IsLocationIncluded string `form:"is_location_included" binding:"required"`
-	address            string `form:"address"`
-	zip_code           string `form:"zip_code"`
-	country            string `form:"country"`
-	city               string `form:"city"`
+	Address            string `form:"address"`
+	Zip_code           string `form:"zip_code"`
+	Country            string `form:"country"`
+	City               string `form:"city"`
 
 	IsHasImage string `form:"is_has_image" binding:"required"`
+}
+
+type RequestUpdateAccountData struct {
+	IsGeneralInformationUpdate string `form:"is_general_information_update" binding:"required"`
+
+	FirstName        string `form:"first_name"`
+	LastName         string `form:"last_name"`
+	Email            string `form:"email"`
+	PhoneCountryCode string `form:"phone_country_code"`
+	Phone            string `form:"phone"`
+	Role             string `form:"role"`
+
+	IsLocationUpdate string `form:"is_location_update" binding:"required"`
+	Address          string `form:"address"`
+	Zip_code         string `form:"zip_code"`
+	Country          string `form:"country"`
+	City             string `form:"city"`
+
+	IsImageUpdate string `form:"is_image_update" binding:"required"`
 }
 
 type ResponseStatusCreatedData struct {
 	IsAccountCreated         bool `json:"is_account_created"`
 	IsLocationAccountCreated bool `json:"is_location_account_created"`
 	IsAccountProfileCreated  bool `json:"is_account_profile_created"`
+}
+
+type ResponseStatusUpdatedData struct {
+	IsGeneralUpdated  bool `json:"is_general_updated"`
+	IsLocationUpdated bool `json:"is_location_account_updated"`
+	IsAvatarUpdated   bool `json:"is_avatar_updated"`
+}
+
+type PreviousLinkAvatarImage struct {
+	ID  int
+	URL string
 }
 
 func GetAccounts(c *gin.Context) {
@@ -313,6 +344,27 @@ func CreateAccount(c *gin.Context) {
 
 	statusCreatedAccount.IsAccountCreated = true
 
+	message := fmt.Sprintf(`Hello, %s,
+		Your Account Was Successfully been created!
+		Your Account Was Active To!
+		`, data.FirstName)
+
+	if strings.ToLower(data.IsManualPassword) == "false" && strings.ToLower(data.IsSendPasswordToEmail) == "true" {
+		message = fmt.Sprintf(`%s
+		Here is Your Credentials
+		Password:%s
+		`, message, data.Password)
+	}
+
+	dataSendEmail := &models.SenderEmailNeeded{
+		Subject: "Your Account Was Succesfully Created!",
+		Message: message,
+		To:      []string{data.Email},
+		Cc:      []string{data.Email},
+	}
+
+	go sendemail.SendEmail(dataSendEmail)
+
 	user_id, err := res.LastInsertId()
 
 	if err != nil {
@@ -345,10 +397,10 @@ func CreateAccount(c *gin.Context) {
 
 		_, err = stmtInsertLocation.Exec(
 			user_id,
-			data.address,
-			data.country,
-			data.city,
-			data.zip_code,
+			data.Address,
+			data.Country,
+			data.City,
+			data.Zip_code,
 			currentTimeMili,
 			currentTimeMili,
 			user_id,
@@ -454,27 +506,6 @@ func CreateAccount(c *gin.Context) {
 		statusCreatedAccount.IsAccountProfileCreated = true
 	}
 
-	message := fmt.Sprintf(`Hello, %s,
-		Your Account Was Successfully been created!
-		Your Account Was Active To!
-		`, data.FirstName)
-
-	if strings.ToLower(data.IsManualPassword) == "false" && strings.ToLower(data.IsSendPasswordToEmail) == "true" {
-		message = fmt.Sprintf(`%s
-		Here is Your Credentials
-		Password:%s
-		`, message, data.Password)
-	}
-
-	dataSendEmail := &models.SenderEmailNeeded{
-		Subject: "Your Account Was Succesfully Created!",
-		Message: message,
-		To:      []string{data.Email},
-		Cc:      []string{data.Email},
-	}
-
-	go sendemail.SendEmail(dataSendEmail)
-
 	c.JSON(http.StatusCreated, gin.H{
 		"message":        "Successfully Create Account",
 		"status_code":    http.StatusCreated,
@@ -558,4 +589,390 @@ func DeleteAccount(c *gin.Context) {
 
 }
 
-func UpdateAccount(c *gin.Context) {}
+func UpdateAccount(c *gin.Context) {
+
+	// update Account?
+	// only image?
+	// general information?
+	// only location?
+
+	// ketika pengguna mengganti emailnya gimana?, apakah verifiednya menjadi 0? atau gimana, kita lihat nnti yah
+
+	user_id := c.Param("id")
+
+	if user_id == "" {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"message":     "Invalid ID Request",
+			"status_code": http.StatusBadRequest,
+		})
+		return
+	}
+
+	var RequestData RequestUpdateAccountData
+
+	if err := c.ShouldBind(&RequestData); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"message":     "Please Fill The Required Column",
+			"status_code": http.StatusBadRequest,
+			"error":       err.Error(),
+		})
+		return
+	}
+
+	if strings.ToLower(RequestData.IsGeneralInformationUpdate) == "false" && strings.ToLower(RequestData.IsLocationUpdate) == "false" && strings.ToLower(RequestData.IsImageUpdate) == "false" {
+		c.JSON(http.StatusOK, gin.H{
+			"message":     "There's Nothing To Changed :D",
+			"status_code": http.StatusOK,
+		})
+		return
+	}
+
+	if isUserExist := checkIsUserExist(user_id); !isUserExist {
+		c.JSON(http.StatusNotFound, gin.H{
+			"message":     "Sorry We Cannot Found The Account Or Something Error",
+			"status_code": http.StatusNotFound,
+		})
+		return
+	}
+
+	db, err := config.ConnectToDatabase()
+
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"message":     "There's Something Error When Connecting Into Database",
+			"status_code": http.StatusInternalServerError,
+			"error":       err.Error(),
+		})
+		return
+	}
+
+	defer db.Close()
+
+	statusUpdated := &ResponseStatusUpdatedData{
+		IsGeneralUpdated:  false,
+		IsAvatarUpdated:   false,
+		IsLocationUpdated: false,
+	}
+
+	currentTime := time.Now()
+	currentTimeMili := currentTime.UnixMilli()
+
+	if strings.ToLower(RequestData.IsGeneralInformationUpdate) == "true" {
+
+		stmtGeneral, err := db.Prepare(`UPDATE users
+			SET first_name=?, last_name=?, email=?, phone_country_code=?, phone=?, role=?, updated_at=?
+				WHERE id=?
+		`)
+
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"message":        "There's Something Error When Prepare Into Database",
+				"status_code":    http.StatusInternalServerError,
+				"error":          err.Error(),
+				"status_updated": statusUpdated,
+			})
+			return
+		}
+
+		defer stmtGeneral.Close()
+
+		res, err := stmtGeneral.Exec(
+			RequestData.FirstName,
+			RequestData.LastName,
+			RequestData.Email,
+			RequestData.PhoneCountryCode,
+			RequestData.Phone,
+			RequestData.Role,
+			currentTimeMili,
+			user_id,
+		)
+
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"message":        "There's Something Error When Updating Personal Data Into Database",
+				"status_code":    http.StatusInternalServerError,
+				"error":          err.Error(),
+				"status_updated": statusUpdated,
+			})
+			return
+		}
+
+		totalAffectedRows, err := res.RowsAffected()
+
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"message":        "There's Something Error When Want To Checking Rows Affected On Updating Personal Data",
+				"status_code":    http.StatusInternalServerError,
+				"error":          err.Error(),
+				"status_updated": statusUpdated,
+			})
+			return
+		}
+
+		if totalAffectedRows == 0 {
+			c.JSON(http.StatusNotFound, gin.H{
+				"message":        "Cannot Updating Personal Data, Cause Cannot Found Account",
+				"status_code":    http.StatusNotFound,
+				"status_updated": statusUpdated,
+			})
+			return
+		}
+
+		statusUpdated.IsGeneralUpdated = true
+	}
+
+	if strings.ToLower(RequestData.IsImageUpdate) == "true" {
+
+		file, err := c.FormFile("avatar_image")
+
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{
+				"message":        "We Didn't Receive Any Uploaded File!",
+				"error":          err.Error(),
+				"status_code":    http.StatusBadRequest,
+				"status_updated": statusUpdated,
+			})
+			return
+		}
+
+		if !strings.HasPrefix(file.Header.Get("Content-Type"), "image/") {
+			c.JSON(http.StatusBadRequest, gin.H{
+				"message":        "Sorry We Cannot Process To Uploud Cause The Type Of Image!",
+				"status_code":    http.StatusBadRequest,
+				"status_updated": statusUpdated,
+			})
+			return
+		}
+
+		openedFile, err := file.Open()
+
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"message":        "There's Something Error When Read The File",
+				"error":          err.Error(),
+				"status_code":    http.StatusInternalServerError,
+				"status_updated": statusUpdated,
+			})
+			return
+		}
+
+		defer openedFile.Close()
+
+		var resultPreviousLinkAvatar PreviousLinkAvatarImage
+		hasAvatarImage := true
+
+		if err := db.QueryRow(`SELECT id, url FROM user_images WHERE id_user=?`, user_id).Scan(&resultPreviousLinkAvatar.ID, &resultPreviousLinkAvatar.URL); err != nil {
+			if err == sql.ErrNoRows {
+				hasAvatarImage = false
+			} else {
+				c.JSON(http.StatusInternalServerError, gin.H{
+					"message":        "There's Something Error When Getting Old Avatar Image",
+					"error":          err.Error(),
+					"status_code":    http.StatusInternalServerError,
+					"status_updated": statusUpdated,
+				})
+				return
+			}
+		}
+
+		filename := fmt.Sprintf("user_id_%s/profile_user_%d", user_id, currentTimeMili)
+		response := storage.UploudProfileAvatar(openedFile, filename, file.Header.Get("Content-Type"))
+
+		if !response.IsSuccess {
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"message":        response.Message,
+				"error":          response.ErrorMessage,
+				"status_code":    http.StatusInternalServerError,
+				"status_updated": statusUpdated,
+			})
+			return
+		}
+
+		if hasAvatarImage {
+
+			// masih kurang updated_by (blm ada middleware cik wkwkwk)
+			stmtProfile, err := db.Prepare(`UPDATE user_images
+				SET url=?, updated_at=?
+					WHERE id=?
+			`)
+
+			if err != nil {
+				c.JSON(http.StatusInternalServerError, gin.H{
+					"message":        "There's Something Error When Prepare To Updating Profile Avatar!",
+					"error":          err.Error(),
+					"status_code":    http.StatusInternalServerError,
+					"status_updated": statusUpdated,
+				})
+				return
+			}
+
+			defer stmtProfile.Close()
+
+			res, err := stmtProfile.Exec(
+				response.URL,
+				currentTimeMili,
+				resultPreviousLinkAvatar.ID,
+			)
+
+			if err != nil {
+				c.JSON(http.StatusInternalServerError, gin.H{
+					"message":        "There's Something Error When Want To Updating Profile Images Into Database!",
+					"error":          err.Error(),
+					"status_code":    http.StatusInternalServerError,
+					"status_updated": statusUpdated,
+				})
+				return
+			}
+
+			totalAffectedRows, err := res.RowsAffected()
+
+			if err != nil {
+				c.JSON(http.StatusInternalServerError, gin.H{
+					"message":        "There's Something Error When Want To Check The If The Image Was Changed Or Not!",
+					"error":          err.Error(),
+					"status_code":    http.StatusInternalServerError,
+					"status_updated": statusUpdated,
+				})
+				return
+			}
+
+			if totalAffectedRows > 0 {
+				bucketName := os.Getenv("GOOGLE_BUCKET_NAME")
+				splitterString := fmt.Sprintf("https://storage.googleapis.com/%s/", bucketName)
+				oldFileName := strings.Split(resultPreviousLinkAvatar.URL, splitterString)[1]
+				go func() {
+					respDeleteFile := storage.DeleteProfileAvatar(oldFileName)
+					fmt.Println(respDeleteFile)
+				}()
+				statusUpdated.IsAvatarUpdated = true
+			}
+
+		} else {
+			stmtProfile, err := db.Prepare(`INSERT INTO user_images(id_user, url, created_at, updated_at, created_by, updated_by) 
+			VALUES(?, ?, ?, ?, ?, ?)
+		`)
+
+			if err != nil {
+				c.JSON(http.StatusInternalServerError, gin.H{
+					"message":        "There's Something Error When Prepare To Insert Profile Avatar!",
+					"error":          err.Error(),
+					"status_code":    http.StatusInternalServerError,
+					"status_updated": statusUpdated,
+				})
+				return
+			}
+
+			defer stmtProfile.Close()
+
+			_, err = stmtProfile.Exec(
+				user_id,
+				response.URL,
+				currentTimeMili,
+				currentTimeMili,
+				user_id,
+				user_id,
+			)
+
+			if err != nil {
+				c.JSON(http.StatusInternalServerError, gin.H{
+					"message":        "There's Something Error When Want To Insert Profile Images Into Database!",
+					"error":          err.Error(),
+					"status_code":    http.StatusInternalServerError,
+					"status_updated": statusUpdated,
+				})
+				return
+			}
+			statusUpdated.IsAvatarUpdated = true
+		}
+	}
+
+	if strings.ToLower(RequestData.IsLocationUpdate) == "true" {
+
+		stmtGeneral, err := db.Prepare(`UPDATE user_address
+			SET address=?, zip_code=?, country=?, city=?, updated_at=?
+				WHERE id_user=?
+		`)
+
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"message":        "There's Something Error When Prepare To Update The location of user Into Database",
+				"status_code":    http.StatusInternalServerError,
+				"error":          err.Error(),
+				"status_updated": statusUpdated,
+			})
+			return
+		}
+
+		defer stmtGeneral.Close()
+
+		res, err := stmtGeneral.Exec(
+			RequestData.Address,
+			RequestData.Zip_code,
+			RequestData.Country,
+			RequestData.City,
+			currentTimeMili,
+			user_id,
+		)
+
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"message":        "There's Something Error When Updating Location Data Into Database",
+				"status_code":    http.StatusInternalServerError,
+				"error":          err.Error(),
+				"status_updated": statusUpdated,
+			})
+			return
+		}
+
+		totalAffectedRows, err := res.RowsAffected()
+
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"message":        "There's Something Error When Want To Checking Rows Affected On Updating Location Data",
+				"status_code":    http.StatusInternalServerError,
+				"error":          err.Error(),
+				"status_updated": statusUpdated,
+			})
+			return
+		}
+
+		if totalAffectedRows == 0 {
+			c.JSON(http.StatusNotFound, gin.H{
+				"message":        "Cannot Updating Location Data, Cause Cannot Found Account",
+				"status_code":    http.StatusNotFound,
+				"status_updated": statusUpdated,
+			})
+			return
+		}
+
+		statusUpdated.IsLocationUpdated = true
+
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message":        "Succesfully Upadting Account!",
+		"status_code":    http.StatusOK,
+		"status_updated": statusUpdated,
+	})
+
+}
+
+func checkIsUserExist(user_id string) bool {
+
+	db, err := config.ConnectToDatabase()
+
+	if err != nil {
+		return false
+	}
+
+	defer db.Close()
+
+	var name string
+
+	if err := db.QueryRow(`SELECT first_name from users WHERE id=?`, user_id).Scan(&name); err != nil {
+		return false
+	}
+
+	return true
+
+}

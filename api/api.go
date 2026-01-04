@@ -4,7 +4,11 @@ import (
 	"net/http"
 
 	"bersi.bermalam.id/api/admin"
+	admin_management_hotel "bersi.bermalam.id/api/admin/management-hotels"
+	admin_management_rooms "bersi.bermalam.id/api/admin/management-hotels/management-rooms"
 	"bersi.bermalam.id/api/auth"
+	"bersi.bermalam.id/models"
+	sendemail "bersi.bermalam.id/utils/sendEmail"
 	"github.com/gin-gonic/gin"
 )
 
@@ -41,10 +45,12 @@ func InitiliazeApi(g *gin.Engine) {
 
 	g.GET("/check-activate-account", auth.CheckActivactionAccount)
 	g.GET("/check-current-session", auth.CheckCurrentSection)
+	g.POST("/send-back-activate", auth.SendBackActiavateAccunt)
 
 	// administrasi api
 
 	// tambahkan middleware willlllllllllllllllllllllllll 1 januari 2026 damn, 9 hari lagi deadline :D
+	// lu salah willl... deadline pengumpulan tanggal 6 wkwkwk, 3 hari lagi - 3 januari 2026
 
 	g.GET("/admin/dashboard", admin.Dashboard)
 	g.GET("/admin/accounts", admin.GetAccounts)
@@ -53,5 +59,34 @@ func InitiliazeApi(g *gin.Engine) {
 	g.DELETE("/admin/accounts/:id", admin.DeleteAccount)
 
 	g.POST("/admin/create-account", admin.CreateAccount)
+
+	g.GET("/admin/hotels", admin_management_hotel.DetailHotel)
+	g.GET("/admin/hotels/:id", admin_management_hotel.DetailHotel)
+	g.GET("/admin/type-rooms/:id", admin_management_rooms.GetDetailRooms)
+
+	g.GET("/test-email", func(c *gin.Context) {
+
+		email := c.Query("email")
+
+		data := &models.SenderEmailNeeded{
+			Subject: "Congratulations On Your Summit!",
+			Message: "Hello, Wildan! \n Thanks FOr Summiting Yaw!",
+			To:      []string{email},
+			Cc:      []string{email},
+		}
+
+		if err := sendemail.SendEmail(data); err != nil {
+			c.JSON(500, gin.H{
+				"message": "Sending Email Wass Success",
+				"error":   err.Error(),
+			})
+			return
+		}
+
+		c.JSON(200, gin.H{
+			"message": "Sending Email Wass Success",
+		})
+
+	})
 
 }

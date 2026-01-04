@@ -1,6 +1,7 @@
 package auth
 
 import (
+	"database/sql"
 	"net/http"
 
 	"bersi.bermalam.id/config"
@@ -47,7 +48,7 @@ func CheckActivactionAccount(c *gin.Context) {
 	`, cookie.Value).Scan(&checkingAccount.ID, &checkingAccount.Status)
 
 	if err != nil {
-		if err.Error() == "sql: no rows in result set" {
+		if err == sql.ErrNoRows {
 			c.JSON(http.StatusNotFound, gin.H{
 				"message":     "We Cannot Found Account Or Token...",
 				"error":       err.Error(),

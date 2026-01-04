@@ -59,17 +59,6 @@ func Login(c *gin.Context) {
 		return
 	}
 
-	if userLogged.Status == "unactive" {
-
-		// Kalo bisa tambahkan send ulang aktivasi akun :D
-
-		c.JSON(http.StatusForbidden, gin.H{
-			"message":     "Account Must Accept The Verification",
-			"status_code": http.StatusForbidden,
-		})
-		return
-	}
-
 	isPasswordMatch := utils.CompareHashPassword(userLogged.Password, data.Password)
 
 	if !isPasswordMatch {
@@ -166,7 +155,9 @@ func Login(c *gin.Context) {
 				SameSite: http.SameSiteLaxMode,
 			})
 
-			go sendOtpCode(data.Email, userLogged.FirstName, code_otp)
+			if userLogged.Status == "active" {
+				go sendOtpCode(data.Email, userLogged.FirstName, code_otp)
+			}
 
 		} else {
 			c.JSON(http.StatusInternalServerError, gin.H{
@@ -178,9 +169,26 @@ func Login(c *gin.Context) {
 		}
 	}
 
+	if checkedToken.UserID != 0 {
+		maxAgeCookie := (checkedToken.ExpiredAt - currentTimeMili) / 1000
+
+		c.SetCookieData(&http.Cookie{
+			Name:     "pre-auth-token",
+			Value:    checkedToken.Token,
+			Path:     "/",
+			Domain:   "localhost",
+			Expires:  time.Unix(int64(checkedToken.ExpiredAt), 0),
+			MaxAge:   int(maxAgeCookie),
+			Secure:   false,
+			HttpOnly: true,
+			SameSite: http.SameSiteLaxMode,
+		})
+	}
+
 	c.JSON(http.StatusOK, gin.H{
-		"message":     "Your Credentials Is Valid, But You Must Complete 1 More Step To Access Our System!",
-		"status_code": http.StatusOK,
+		"message":           "Your Credentials Is Valid, But You Must Complete 1 More Step To Access Our System!",
+		"is_account_active": userLogged.Status == "active",
+		"status_code":       http.StatusOK,
 	})
 }
 

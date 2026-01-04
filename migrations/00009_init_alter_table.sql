@@ -22,6 +22,7 @@ ALTER TABLE `hotel_facilities` ADD FOREIGN KEY (`id_facilities`) REFERENCES `fac
 ALTER TABLE `hotel_facilities` ADD FOREIGN KEY (`id_hotel`) REFERENCES `hotels` (`id`);
 ALTER TABLE `hotel_location` ADD FOREIGN KEY (`id_hotel`) REFERENCES `hotels` (`id`);
 ALTER TABLE `detail_hotel` ADD FOREIGN KEY (`id_hotel`) REFERENCES `hotels` (`id`);
+ALTER TABLE `hotel_operational` ADD FOREIGN KEY (`id_hotel`) REFERENCES `hotels` (`id`);
 ALTER TABLE `hotel_documents` ADD FOREIGN KEY (`id_hotel`) REFERENCES `hotels` (`id`);
 
 -- Relasi Kamar (Rooms)
@@ -83,6 +84,7 @@ ALTER TABLE `hotel_type_room_price_period` DROP FOREIGN KEY `hotel_type_room_pri
 ALTER TABLE `hotel_type_rooms` DROP FOREIGN KEY `hotel_type_rooms_ibfk_1`;
 ALTER TABLE `hotel_documents` DROP FOREIGN KEY `hotel_documents_ibfk_1`;
 ALTER TABLE `detail_hotel` DROP FOREIGN KEY `detail_hotel_ibfk_1`;
+ALTER TABLE `hotel_operational` DROP FOREIGN KEY `hotel_operational_ibfk_1`;
 ALTER TABLE `hotel_location` DROP FOREIGN KEY `hotel_location_ibfk_1`;
 ALTER TABLE `hotel_facilities` DROP FOREIGN KEY `hotel_facilities_ibfk_1`;
 ALTER TABLE `hotel_facilities` DROP FOREIGN KEY `hotel_facilities_ibfk_2`;
