@@ -70,3 +70,8 @@ type ResponseMessageStorage struct {
 	IsSuccess    bool
 	URL          string
 }
+
+type IntiliazeQueryRows struct {
+	Rows  *sql.Rows
+	Error error
+}

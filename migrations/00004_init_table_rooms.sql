@@ -70,7 +70,7 @@ CREATE TABLE `hotel_rooms` (
   `updated_by` int
 );
 
-CREATE TABLE `type_rooms_benefit` (
+CREATE TABLE `hotel_type_room_benefit` (
   `id` int PRIMARY KEY AUTO_INCREMENT,
   `id_type_room` int NOT NULL,
   `name` varchar(120),
@@ -81,7 +81,7 @@ CREATE TABLE `type_rooms_benefit` (
   `updated_by` int
 );
 
-CREATE TABLE `type_room_rules` (
+CREATE TABLE `hotel_type_room_rules` (
   `id` int PRIMARY KEY AUTO_INCREMENT,
   `id_type_room` int NOT NULL,
   `name` varchar(120),
@@ -120,8 +120,8 @@ CREATE TABLE `voucher_hotel_type_rooms` (
 -- +goose Down
 DROP TABLE IF EXISTS voucher_hotel_type_rooms;
 DROP TABLE IF EXISTS hotel_feedback;
-DROP TABLE IF EXISTS type_room_rules;
-DROP TABLE IF EXISTS type_rooms_benefit;
+DROP TABLE IF EXISTS hotel_type_room_rules;
+DROP TABLE IF EXISTS hotel_type_room_benefit;
 DROP TABLE IF EXISTS hotel_rooms;
 DROP TABLE IF EXISTS hotel_type_room_images;
 DROP TABLE IF EXISTS hotel_type_room_dynamic_price;

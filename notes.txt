@@ -58,6 +58,6 @@ created dan updated_wajib ya....
 besok gw lanjut ini wkkwk, udh ngantuk... (3 januari 2026 - 23:32)
 hotel_personal_information
  npwp varchar
- bank_name varchar
  bank_account varchar
+ bank_name varchar
  bank_account_owned_by varchar
