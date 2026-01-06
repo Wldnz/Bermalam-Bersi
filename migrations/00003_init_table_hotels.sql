@@ -31,7 +31,8 @@ CREATE TABLE `hotel_images` (
 CREATE TABLE `hotel_location` (
   `id` int PRIMARY KEY AUTO_INCREMENT,
   `id_hotel` int,
-  `address` varchar(255) NOT NULL,
+  `address_1` varchar(255) NOT NULL,
+  `address_2` varchar(255) NOT NULL,
   `city` varchar(120) NOT NULL,
   `zip_code` varchar(25) NOT NULL,
   `country` varchar(120) NOT NULL,
@@ -111,11 +112,22 @@ CREATE TABLE `hotel_sanctions` (
   `updated_by` int
 );
 
+CREATE TABLE `hotel_receptionists`(
+  `id` int PRIMARY KEY AUTO_INCREMENT,
+  `id_user` int NOT NULL,
+  `id_hotel` int NOT NULL,
+  `created_at` bigint NOT NULL,
+  `updated_at` bigint NOT NULL,
+  `created_by` int,
+  `updated_by` int
+)
+
 
 
 
 -- +goose Down
 
+DROP TABLE IF EXISTS hotel_receptionists;
 DROP TABLE IF EXISTS hotel_sanctions;
 DROP TABLE IF EXISTS sanctions;
 DROP TABLE IF EXISTS hotel_documents;

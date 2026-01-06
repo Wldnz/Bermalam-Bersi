@@ -13,7 +13,7 @@ CREATE TABLE `transactions` (
   `category` ENUM ('dp', 'full') DEFAULT 'full',
   `level` ENUM ('night', 'two_night', 'long_stay') DEFAULT 'night',
   `payment_type` varchar(60) NOT NULL,
-  `status` ENUM ('pending', 'paid', 'success', 'fail', 'request_refund') DEFAULT 'pending',
+  `status` ENUM ('pending', 'paid', 'success', 'fail', 'cancelled' ,'request_refund') DEFAULT 'pending',
   `expired_at` bigint NOT NULL,
   `created_at` bigint,
   `updated_at` bigint,
@@ -76,10 +76,24 @@ CREATE TABLE `transaction_vouchers` (
   `updated_by` int
 );
 
+CREATE TABLE `hotel_feedback` (
+  `id` int PRIMARY KEY AUTO_INCREMENT,
+  `id_transaction` int NOT NULL,
+  `guest_name` varchar(255),
+  `value` text NOT NULL,
+  `category` ENUM ('not_specified', 'neutral', 'positive', 'negative') DEFAULT 'not_specified',
+  `stars` decimal(2,1) NOT NULL DEFAULT 0,
+  `created_at` bigint NOT NULL,
+  `updated_at` bigint NOT NULL,
+  `created_by` int,
+  `updated_by` int
+);
+
 
 
 -- +goose Down
 
+DROP TABLE IF EXISTS hotel_feedback;
 DROP TABLE IF EXISTS transaction_vouchers;
 DROP TABLE IF EXISTS other_bills;
 DROP TABLE IF EXISTS request_refund_transaction;

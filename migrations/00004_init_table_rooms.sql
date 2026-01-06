@@ -92,18 +92,6 @@ CREATE TABLE `hotel_type_room_rules` (
   `updated_by` int
 );
 
-CREATE TABLE `hotel_feedback` (
-  `id` int PRIMARY KEY AUTO_INCREMENT,
-  `id_user` int,
-  `id_type_room` int,
-  `guest_name` varchar(255),
-  `value` text NOT NULL,
-  `category` ENUM ('not_specified', 'neutral', 'positive', 'negative') DEFAULT 'not_specified',
-  `created_at` bigint NOT NULL,
-  `updated_at` bigint NOT NULL,
-  `created_by` int,
-  `updated_by` int
-);
 
 CREATE TABLE `voucher_hotel_type_rooms` (
   `id` int PRIMARY KEY AUTO_INCREMENT,
@@ -119,7 +107,6 @@ CREATE TABLE `voucher_hotel_type_rooms` (
 
 -- +goose Down
 DROP TABLE IF EXISTS voucher_hotel_type_rooms;
-DROP TABLE IF EXISTS hotel_feedback;
 DROP TABLE IF EXISTS hotel_type_room_rules;
 DROP TABLE IF EXISTS hotel_type_room_benefit;
 DROP TABLE IF EXISTS hotel_rooms;

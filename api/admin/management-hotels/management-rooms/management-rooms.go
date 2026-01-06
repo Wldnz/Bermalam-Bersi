@@ -534,7 +534,7 @@ func facilitesTypeRoom(
 
 	if initQuery.Error != nil {
 		return ResponseMenuTypeRoom{
-			Message:      "There's Something Error When Getting Hotel Facilities",
+			Message:      "There's Something Error When Getting Room Facilities",
 			ErrorMessage: initQuery.Error.Error(),
 			Category:     "ERROR",
 			IsSuccess:    false,
@@ -550,7 +550,7 @@ func facilitesTypeRoom(
 
 		if err = initQuery.Rows.Scan(&facility.ID, &facility.FacilityName, &facility.CategoryName, &facility.CreatedAt); err != nil {
 			return ResponseMenuTypeRoom{
-				Message:      "There's Something Error When Scanning Hotel Facilities",
+				Message:      "There's Something Error When Scanning Room Facilities",
 				ErrorMessage: initQuery.Error.Error(),
 				Category:     "ERROR",
 				IsSuccess:    false,
@@ -568,7 +568,7 @@ func facilitesTypeRoom(
 	}
 
 	return ResponseMenuTypeRoom{
-		Message:   "Succesfully Getting Hotel Facilities",
+		Message:   "Succesfully Getting Room Facilities",
 		Category:  "SUCCESS",
 		IsSuccess: true,
 		Data:      facilities,
@@ -599,14 +599,14 @@ func detailFacilitiesTypeRoom(facility_id string) ResponseMenuTypeRoom {
 	if err = db.QueryRow(query, facility_id).Scan(&data.ID, &data.FacilityName, &data.CategoryName, &data.CreatedAt, &data.UpdatedAt); err != nil {
 		if err == sql.ErrNoRows {
 			return ResponseMenuTypeRoom{
-				Message:      "Cannot Found Detail Hotel Facility",
+				Message:      "Cannot Found Detail Room Facility",
 				ErrorMessage: err.Error(),
 				Category:     "NOT_FOUND",
 				IsSuccess:    false,
 			}
 		} else {
 			return ResponseMenuTypeRoom{
-				Message:      "There's Something Error When Getting Detail Hotel Facility",
+				Message:      "There's Something Error When Getting Detail Room Facility",
 				ErrorMessage: err.Error(),
 				Category:     "ERROR",
 				IsSuccess:    false,
@@ -615,7 +615,7 @@ func detailFacilitiesTypeRoom(facility_id string) ResponseMenuTypeRoom {
 	}
 
 	return ResponseMenuTypeRoom{
-		Message:   "Succesfuly Getting Detail Hotel Facility",
+		Message:   "Succesfuly Getting Detail Room Facility",
 		Category:  "SUCCESS",
 		IsSuccess: true,
 		Data:      data,

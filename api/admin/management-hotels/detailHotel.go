@@ -4,8 +4,10 @@ import (
 	"database/sql"
 	"fmt"
 	"net/http"
+	"time"
 
 	"bersi.bermalam.id/config"
+	"bersi.bermalam.id/models"
 	"github.com/gin-gonic/gin"
 )
 
@@ -159,6 +161,77 @@ type ResultDetailTypeRooms struct {
 	// UpdatedBy int `json:"updated_by"`
 }
 
+type ResultHotelFacility struct {
+	ID           int    `json:"id"`
+	FacilityName string `json:"facility_name"`
+	CategoryName string `json:"category_name"`
+	CreatedAt    string `json:"created_at"`
+}
+
+type ResultDetailFacility struct {
+	ResultHotelFacility
+	UpdatedAt string `json:"updated_at"`
+	// CreatedBy string `json:"created_by"`
+	// UpdatedBy string `json:"updated_by"`
+	// CategoryFacilities []ResultCategoryFacility `json:"category_facilities"`
+	// Facilities         []ResultFacility `json:"facilities"`
+}
+
+type ResultHotelLocation struct {
+	ID        int    `json:"id"`
+	Address_1 string `json:"address_2"`
+	Address_2 string `json:"address_1"`
+	ZipCode   string `json:"zip_code"`
+	Country   string `json:"country"`
+	City      string `json:"city"`
+	Longitude string `json:"longitude"`
+	Latitude  string `json:"latitude"`
+	CreatedAt string `json:"created_at"`
+	UpdatedAt string `json:"updated_at"`
+}
+
+type ResultFAQHotel struct {
+	ID        int    `json:"id"`
+	Question  string `json:"question"`
+	Answer    string `json:"answer"`
+	CreatedAt string `json:"created_at"`
+	UpdatedAt string `json:"updated_at"`
+}
+
+type ResultFeedback struct {
+	ID        int    `json:"id"`
+	GuestName string `json:"guest_name"`
+	Value     string `json:"value"`
+	Category  string `json:"category"`
+	Stars     string `json:"stars"`
+	CreatedAt string `json:"created_at"`
+	UpdatedAt string `json:"updated_at"`
+	RoomNames string `json:"room_names"`
+}
+
+type ResultStatisticDataRaw struct {
+	TotalVisits     sql.NullInt32 `json:"total_visits"`
+	TotalOrders     sql.NullInt32 `json:"total_orders"`
+	CancelledOrders sql.NullInt32 `json:"cancelled_orders"`
+	// TotalRequestRefund sql.NullInt32 `json:"total_request_refund"`
+	TotalRefund       sql.NullInt32  `json:"total_refund"`
+	TotalReceptionist sql.NullInt32  `json:"total_receptionist"`
+	TotalRevenue      sql.NullString `json:"total_revenue"`
+	// tambahakan data / query untuk melihat dari mana aja pengunjung
+
+}
+type ResultStatisticData struct {
+	TotalVisits     int `json:"total_visits"`
+	TotalOrders     int `json:"total_orders"`
+	CancelledOrders int `json:"cancelled_orders"`
+	// TotalRequestRefund int `json:"total_request_refund"`
+	TotalRefund       int    `json:"total_refund"`
+	TotalReceptionist int    `json:"total_receptionist"`
+	TotalRevenue      string `json:"total_revenue"`
+	// tambahakan data / query untuk melihat dari mana aja pengunjung
+
+}
+
 func DetailHotel(c *gin.Context) {
 
 	hotel_id := c.Param("id")
@@ -172,6 +245,10 @@ func DetailHotel(c *gin.Context) {
 	}
 
 	menu := c.DefaultQuery("tab_menu", "general")
+	search := c.Query("search")
+	id := c.Query("id")
+	timeSelected := c.Query("timeSelected")
+	category := c.DefaultQuery("category", "erning")
 
 	var response ResponseMenuHotel
 
@@ -185,15 +262,32 @@ func DetailHotel(c *gin.Context) {
 		data := personalInformation(hotel_id)
 		response = data
 	case "type-rooms":
-		data := typeRooms(hotel_id)
+		data := typeRooms(hotel_id, search)
 		response = data
 	case "detail-room":
-		data := detailTypeRoom(c.DefaultQuery("id_type_room", "0"))
+		data := detailTypeRoom(id)
 		response = data
 	case "facilities":
+		data := facilities(hotel_id, search)
+		response = data
+	case "detail-facility":
+		data := detailFacility(id)
+		response = data
 	case "location":
-	case "feedback":
-	case "stats":
+		data := location(hotel_id)
+		response = data
+	case "faqs":
+		data := faq(hotel_id, search)
+		response = data
+	case "detail-faqs":
+		data := detailFaq(id)
+		response = data
+	case "feedbacks":
+		data := feedback(hotel_id)
+		response = data
+	case "statistic":
+		data := statistic(hotel_id, timeSelected, category)
+		response = data
 	default:
 		c.JSON(http.StatusBadGateway, gin.H{
 			"message":     fmt.Sprintf("Sorry, We Cannot Process menu %s", menu),
@@ -436,8 +530,7 @@ func personalInformation(hotel_id string) ResponseMenuHotel {
 
 }
 
-// need search_engine ig
-func typeRooms(hotel_id string) ResponseMenuHotel {
+func typeRooms(hotel_id string, search string) ResponseMenuHotel {
 
 	db, err := config.ConnectToDatabase()
 
@@ -452,39 +545,40 @@ func typeRooms(hotel_id string) ResponseMenuHotel {
 
 	defer db.Close()
 
-	var typeRooms []ResultTypeRoomHotel
+	var initQuery models.IntiliazeQueryRows
 
-	rows, err := db.Query(`SELECT  htr.id, htr.name, htr.room_size, htr.bed_type, COUNT(DISTINCT hr.id) AS total_rooms
+	typeRooms := []ResultTypeRoomHotel{}
+
+	query := `SELECT  htr.id, htr.name, htr.room_size, htr.bed_type, COUNT(DISTINCT hr.id) AS total_rooms
 						FROM hotels h
 							INNER JOIN hotel_type_rooms htr ON htr.id_hotel = h.id
 								INNER JOIN hotel_rooms hr ON hr.id_type_room = htr.id
-								WHERE h.id =?
-									GROUP BY h.id, htr.id
-	`, hotel_id)
+								WHERE h.id =?`
 
-	if err != nil {
-		if err == sql.ErrNoRows {
-			return ResponseMenuHotel{
-				Message:      "Hotel Doesn't Have Any Rooms!",
-				ErrorMessage: err.Error(),
-				Category:     "NOT_FOUND",
-				IsSuccess:    false,
-			}
-		} else {
-			return ResponseMenuHotel{
-				Message:      "There's Something Error When Getting Type Rooms",
-				ErrorMessage: err.Error(),
-				Category:     "ERROR",
-				IsSuccess:    false,
-			}
+	searchParam := "%" + search + "%"
+
+	if search != "" {
+		query += ` AND htr.name LIKE ? GROUP BY h.id, htr.id`
+		initQuery.Rows, initQuery.Error = db.Query(query, hotel_id, searchParam)
+	} else {
+		query += ` GROUP BY h.id, htr.id`
+		initQuery.Rows, initQuery.Error = db.Query(query, hotel_id)
+	}
+
+	if initQuery.Error != nil {
+		return ResponseMenuHotel{
+			Message:      "There's Something Error When Getting Type Rooms",
+			ErrorMessage: initQuery.Error.Error(),
+			Category:     "ERROR",
+			IsSuccess:    false,
 		}
 	}
 
-	defer rows.Close()
+	defer initQuery.Rows.Close()
 
-	for rows.Next() {
+	for initQuery.Rows.Next() {
 		var typeRoom ResultTypeRoomHotel
-		if err = rows.Scan(&typeRoom.ID, &typeRoom.Name, &typeRoom.RoomSize, &typeRoom.BedType, &typeRoom.TotalRooms); err != nil {
+		if err = initQuery.Rows.Scan(&typeRoom.ID, &typeRoom.Name, &typeRoom.RoomSize, &typeRoom.BedType, &typeRoom.TotalRooms); err != nil {
 			return ResponseMenuHotel{
 				Message:      "There's Something Error When Getting Type Rooms",
 				ErrorMessage: err.Error(),
@@ -493,6 +587,14 @@ func typeRooms(hotel_id string) ResponseMenuHotel {
 			}
 		}
 		typeRooms = append(typeRooms, typeRoom)
+	}
+
+	if len(typeRooms) == 0 {
+		return ResponseMenuHotel{
+			Message:   "Hotel Doesn't Have Any Rooms!",
+			Category:  "NOT_FOUND",
+			IsSuccess: false,
+		}
 	}
 
 	return ResponseMenuHotel{
@@ -547,26 +649,17 @@ func detailTypeRoom(
 		}
 	}
 
-	var images []ResultTypeRoomImages
+	images := []ResultTypeRoomImages{}
 
 	query = `SELECT id, url FROM hotel_type_room_images WHERE id_type_room=?`
 
 	rows, err := db.Query(query, type_room_id)
 
 	if err != nil {
-		if err == sql.ErrNoRows {
-			return ResponseMenuHotel{
-				Message:   "Cannot Found Detail Type Room Images",
-				IsSuccess: true,
-				Category:  "NOT_FOUND",
-				Data:      data,
-			}
-		} else {
-			return ResponseMenuHotel{
-				Message:   "There's Something Error When Getting Detail Type Room Images Data",
-				IsSuccess: false,
-				Category:  "ERROR",
-			}
+		return ResponseMenuHotel{
+			Message:   "There's Something Error When Getting Detail Type Room Images Data",
+			IsSuccess: false,
+			Category:  "ERROR",
 		}
 	}
 
@@ -578,8 +671,8 @@ func detailTypeRoom(
 		if err = rows.Scan(&image.ID, &image.URL); err != nil {
 			return ResponseMenuHotel{
 				Message:   "There's Something Error When Scanning Type Room Images",
-				IsSuccess: true,
-				Category:  "NOT_FOUND",
+				IsSuccess: false,
+				Category:  "ERROR",
 				Data:      data,
 			}
 		}
@@ -599,12 +692,498 @@ func detailTypeRoom(
 }
 
 // need search_engine ig
-func facilities() {}
+func facilities(hotel_id string, search string) ResponseMenuHotel {
+	db, err := config.ConnectToDatabase()
+
+	if err != nil {
+		return ResponseMenuHotel{
+			Message:      "There's Something Error When Connecting Into Database",
+			ErrorMessage: err.Error(),
+			Category:     "ERROR",
+			IsSuccess:    false,
+		}
+	}
+
+	defer db.Close()
+
+	var initQuery models.IntiliazeQueryRows
+
+	searchParam := "%" + search + "%"
+
+	query := `SELECT hf.id, f.name AS facility_name, cf.name AS category_name, hf.created_at FROM category_facilities cf
+	INNER JOIN facilities f ON f.id_category_facility = cf.id 
+		INNER JOIN hotel_facilities hf ON hf.id_facilities = f.id
+			WHERE hf.id_hotel=? AND category='hotel'`
+
+	if search != "" {
+		query += ` AND f.name LIKE ?`
+		initQuery.Rows, initQuery.Error = db.Query(query, hotel_id, searchParam)
+	} else {
+		initQuery.Rows, initQuery.Error = db.Query(query, hotel_id)
+	}
+
+	if initQuery.Error != nil {
+		return ResponseMenuHotel{
+			Message:      "There's Something Error When Getting Hotel Facilities",
+			ErrorMessage: initQuery.Error.Error(),
+			Category:     "ERROR",
+			IsSuccess:    false,
+		}
+	}
+
+	defer initQuery.Rows.Close()
+
+	facilities := []ResultHotelFacility{}
+
+	for initQuery.Rows.Next() {
+		var facility ResultHotelFacility
+
+		if err = initQuery.Rows.Scan(&facility.ID, &facility.FacilityName, &facility.CategoryName, &facility.CreatedAt); err != nil {
+			return ResponseMenuHotel{
+				Message:      "There's Something Error When Scanning Hotel Facilities",
+				ErrorMessage: initQuery.Error.Error(),
+				Category:     "ERROR",
+				IsSuccess:    false,
+			}
+		}
+		facilities = append(facilities, facility)
+	}
+
+	if len(facilities) == 0 {
+		return ResponseMenuHotel{
+			Message:   "Sorry We Cannot Found Facility...",
+			Category:  "NOT_FOUND",
+			IsSuccess: false,
+		}
+	}
+
+	return ResponseMenuHotel{
+		Message:   "Succesfully Getting Hotel Facilities",
+		Category:  "SUCCESS",
+		IsSuccess: true,
+		Data:      facilities,
+	}
+
+}
+
+func detailFacility(facility_id string) ResponseMenuHotel {
+	db, err := config.ConnectToDatabase()
+
+	if err != nil {
+		return ResponseMenuHotel{
+			Message:      "There's Something Error When Connecting Into Database",
+			ErrorMessage: err.Error(),
+			Category:     "ERROR",
+			IsSuccess:    false,
+		}
+	}
+
+	defer db.Close()
+
+	var data ResultDetailFacility
+
+	query := `SELECT hf.id, f.name AS facility_name, cf.name AS category_name, hf.created_at, hf.updated_at FROM category_facilities cf
+	INNER JOIN facilities f ON f.id_category_facility = cf.id 
+		INNER JOIN hotel_facilities hf ON hf.id_facilities = f.id
+			WHERE hf.id=? AND category='hotel'`
+
+	if err = db.QueryRow(query, facility_id).Scan(&data.ID, &data.FacilityName, &data.CategoryName, &data.CreatedAt, &data.UpdatedAt); err != nil {
+		if err == sql.ErrNoRows {
+			return ResponseMenuHotel{
+				Message:      "Cannot Found Detail Hotel Facility",
+				ErrorMessage: err.Error(),
+				Category:     "NOT_FOUND",
+				IsSuccess:    false,
+			}
+		} else {
+			return ResponseMenuHotel{
+				Message:      "There's Something Error When Getting Detail Hotel Facility",
+				ErrorMessage: err.Error(),
+				Category:     "ERROR",
+				IsSuccess:    false,
+			}
+		}
+	}
+
+	return ResponseMenuHotel{
+		Message:   "Succesfuly Getting Detail Hotel Facility",
+		Category:  "SUCCESS",
+		IsSuccess: true,
+		Data:      data,
+	}
+
+}
+
+func location(hotel_id string) ResponseMenuHotel {
+
+	db, err := config.ConnectToDatabase()
+
+	if err != nil {
+		return ResponseMenuHotel{
+			Message:      "There's Something Error When Connecting Into Database",
+			ErrorMessage: err.Error(),
+			Category:     "ERROR",
+			IsSuccess:    false,
+		}
+	}
+
+	defer db.Close()
+
+	query := `SELECT id, address_1, address_2, zip_code, country, city, longitude, latitude, created_at, updated_at FROM hotel_location WHERE id_hotel=?`
+
+	var data ResultHotelLocation
+
+	if err = db.QueryRow(query, hotel_id).Scan(
+		&data.ID, &data.Address_1, &data.Address_2, &data.ZipCode, &data.Country, &data.City, &data.Longitude, &data.Latitude, &data.CreatedAt, &data.UpdatedAt,
+	); err != nil {
+		if err == sql.ErrNoRows {
+			return ResponseMenuHotel{
+				Message:      "Sorry We Cannot Found Location..",
+				ErrorMessage: err.Error(),
+				Category:     "NOT_FOUND",
+				IsSuccess:    false,
+			}
+		} else {
+			return ResponseMenuHotel{
+				Message:      "There's Something Error When Getting Data Hotel Location",
+				ErrorMessage: err.Error(),
+				Category:     "ERROR",
+				IsSuccess:    false,
+			}
+		}
+	}
+
+	return ResponseMenuHotel{
+		Message:   "Succesfully Getting Location Hotel!",
+		Category:  "SUCCESS",
+		IsSuccess: true,
+		Data:      data,
+	}
+
+}
+
+// tambahkan hotel_near_location? karena ada jaraknya
 
 // need search_engine ig
-func location() {}
+func faq(
+	hotel_id string,
+	search string,
+) ResponseMenuHotel {
 
-// need search_engine ig
-func feedback() {}
+	db, err := config.ConnectToDatabase()
 
-func statistic() {}
+	if err != nil {
+		return ResponseMenuHotel{
+			Message:      "There's Something Error When Connecting Into Database",
+			ErrorMessage: err.Error(),
+			Category:     "ERROR",
+			IsSuccess:    false,
+		}
+	}
+
+	defer db.Close()
+
+	var initQuery models.IntiliazeQueryRows
+
+	// tambahkan berapa banyak orang terbantu.... (optional ya wkwkwk)
+
+	query := `SELECT id, question, answer, created_at, updated_at FROM faqs WHERE id_hotel IS NOT NULL AND id_hotel=?`
+
+	searchParam := "%" + search + "%"
+
+	if search != "" {
+		query += ` AND question LIKE ?`
+		initQuery.Rows, initQuery.Error = db.Query(query, hotel_id, searchParam)
+	} else {
+		initQuery.Rows, initQuery.Error = db.Query(query, hotel_id)
+	}
+
+	if initQuery.Error != nil {
+		return ResponseMenuHotel{
+			Message:      "There's Something Error When Getting FAQS HOTEL",
+			Category:     "ERROR",
+			ErrorMessage: initQuery.Error.Error(),
+			IsSuccess:    false,
+		}
+	}
+
+	defer initQuery.Rows.Close()
+
+	data := []ResultFAQHotel{}
+
+	for initQuery.Rows.Next() {
+		var faq ResultFAQHotel
+
+		if err = initQuery.Rows.Scan(&faq.ID, &faq.Question, &faq.Answer, &faq.CreatedAt, &faq.UpdatedAt); err != nil {
+			return ResponseMenuHotel{
+				Message:      "There's Something Error When Scanning Data FAQS HOTEL",
+				Category:     "ERROR",
+				ErrorMessage: err.Error(),
+				IsSuccess:    false,
+			}
+		}
+		data = append(data, faq)
+	}
+
+	if len(data) == 0 {
+		return ResponseMenuHotel{
+			Message:   "Cannot Find FAQ...",
+			Category:  "NOT_FOUND",
+			IsSuccess: false,
+		}
+	}
+
+	return ResponseMenuHotel{
+		Message:   "Succesfully Getting Data FAQS HOTEL",
+		Category:  "SUCCESS",
+		IsSuccess: true,
+		Data:      data,
+	}
+
+}
+
+func detailFaq(
+	faq_id string,
+) ResponseMenuHotel {
+
+	db, err := config.ConnectToDatabase()
+
+	if err != nil {
+		return ResponseMenuHotel{
+			Message:      "There's Something Error When Connecting Into Database",
+			ErrorMessage: err.Error(),
+			Category:     "ERROR",
+			IsSuccess:    false,
+		}
+	}
+
+	defer db.Close()
+
+	// tambahkan berapa banyak orang terbantu.... (optional ya wkwkwk)
+
+	query := `SELECT id, question, answer, created_at, updated_at FROM faqs WHERE id_hotel IS NOT NULL AND id_hotel=?`
+
+	var faq ResultFAQHotel
+
+	if err = db.QueryRow(query, faq_id).Scan(&faq.ID, &faq.Question, &faq.Answer, &faq.CreatedAt, &faq.UpdatedAt); err != nil {
+		if err == sql.ErrNoRows {
+			return ResponseMenuHotel{
+				Message:      "Cannot Find FAQ...",
+				Category:     "NOT_FOUND",
+				ErrorMessage: err.Error(),
+				IsSuccess:    false,
+			}
+		} else {
+			return ResponseMenuHotel{
+				Message:      "There's Something Error When Getting Data FAQS HOTEL",
+				Category:     "ERROR",
+				ErrorMessage: err.Error(),
+				IsSuccess:    false,
+			}
+		}
+	}
+
+	return ResponseMenuHotel{
+		Message:   "Succesfully Getting Data FAQS HOTEL",
+		Category:  "SUCCESS",
+		IsSuccess: true,
+		Data:      faq,
+	}
+
+}
+
+func feedback(
+	hotel_id string,
+) ResponseMenuHotel {
+
+	db, err := config.ConnectToDatabase()
+
+	if err != nil {
+		return ResponseMenuHotel{
+			Message:      "There's Something Error When Connecting Into Database",
+			ErrorMessage: err.Error(),
+			Category:     "ERROR",
+			IsSuccess:    false,
+		}
+	}
+
+	defer db.Close()
+
+	query := `SELECT 
+			hf.id, hf.guest_name, hf.value, hf.category, hf.stars, hf.created_at, hf.updated_at,
+			GROUP_CONCAT(DISTINCT SUBSTRING_INDEX(htr.name, ',', 1) SEPARATOR ', ') AS room_names
+		FROM hotel_feedback hf
+			INNER JOIN transactions t ON t.id = hf.id_transaction
+			INNER JOIN booking b ON b.id_transaction = t.id 
+			INNER JOIN hotel_type_rooms htr ON htr.id = b.id_type_room
+			INNER JOIN hotels h ON h.id = htr.id_hotel
+				WHERE h.id = ?
+				GROUP BY hf.id`
+
+	rows, err := db.Query(query, hotel_id)
+
+	if err != nil {
+		return ResponseMenuHotel{
+			Message:      "There's Something Error When Getting Feedback Hotel",
+			Category:     "error",
+			ErrorMessage: err.Error(),
+			IsSuccess:    false,
+		}
+	}
+
+	defer rows.Close()
+
+	data := []ResultFeedback{}
+
+	for rows.Next() {
+		var feedback ResultFeedback
+
+		if err = rows.Scan(&feedback.ID, &feedback.GuestName, &feedback.Value, &feedback.Category, &feedback.Stars, &feedback.CreatedAt, &feedback.UpdatedAt, &feedback.RoomNames); err != nil {
+			return ResponseMenuHotel{
+				Message:      "There's Something Error When Scanning Data Feedback Hotel",
+				Category:     "error",
+				ErrorMessage: err.Error(),
+				IsSuccess:    false,
+			}
+		}
+
+		data = append(data, feedback)
+	}
+
+	if len(data) == 0 {
+		return ResponseMenuHotel{
+			Message:   "Sorry We Cannot Found Feedback",
+			Category:  "NOT_FOUND",
+			IsSuccess: false,
+		}
+	}
+
+	return ResponseMenuHotel{
+		Message:   "Succesfully Getting Feedbacks Hotel Data",
+		Category:  "SUCCESS",
+		IsSuccess: true,
+		Data:      data,
+	}
+}
+
+func statistic(
+	hotel_id string,
+	timeSelected string,
+	category string,
+) ResponseMenuHotel {
+
+	db, err := config.ConnectToDatabase()
+
+	if err != nil {
+		return ResponseMenuHotel{
+			Message:      "There's Something Error When Connecting Into Database",
+			ErrorMessage: err.Error(),
+			Category:     "ERROR",
+			IsSuccess:    false,
+		}
+	}
+
+	defer db.Close()
+
+	currentTimeSelected := handleSelectedTime(timeSelected)
+
+	switch category {
+	case "earning":
+		category = "success"
+	case "pending":
+		category = "paid"
+	}
+
+	query := `SELECT 
+	(SELECT COUNT(b.id) FROM transactions t
+	INNER JOIN booking b ON b.id_transaction = t.id
+		INNER JOIN hotel_type_rooms htr ON b.id_type_room = htr.id
+			 WHERE htr.id_hotel = ? AND t.created_at >=?) AS total_orders,
+	(SELECT COUNT(b.id) FROM transactions t
+	INNER JOIN booking b ON b.id_transaction = t.id
+		INNER JOIN hotel_type_rooms htr ON b.id_type_room = htr.id
+			 WHERE htr.id_hotel = ? AND t.created_at >=? AND t.status='cancelled') AS total_cancelled,
+	(SELECT COUNT(b.id) FROM transactions t
+	INNER JOIN booking b ON b.id_transaction = t.id
+		INNER JOIN hotel_type_rooms htr ON b.id_type_room = htr.id
+			INNER JOIN request_refund_transaction rrt ON rrt.id_transaction = t.id
+			 WHERE htr.id_hotel = ? AND t.created_at >=? AND rrt.status='request_refund') AS total_refund,
+	(SELECT COUNT(u.id) AS total_receptionist FROM users u
+	INNER JOIN hotel_receptionists hr ON hr.id_user = u.id
+		WHERE hr.id_hotel=? AND u.created_at >= ?
+		GROUP BY hr.id_hotel) AS total_receptionist,
+	(SELECT SUM(t.total_price) AS total_price FROM transactions t
+	INNER JOIN booking b ON b.id_transaction = t.id
+		INNER JOIN hotel_type_rooms htr ON b.id_type_room = htr.id
+			 WHERE htr.id_hotel = ? AND t.created_at >= ? AND t.status = ? 
+			 GROUP BY htr.id_hotel) AS total_revenue`
+
+	var dataRaw ResultStatisticDataRaw
+	var data ResultStatisticData
+
+	// Gunakan QueryRow karena kita hanya mengharapkan satu baris hasil
+	err = db.QueryRow(query,
+		hotel_id, currentTimeSelected,
+		hotel_id, currentTimeSelected,
+		hotel_id, currentTimeSelected,
+		hotel_id, currentTimeSelected,
+		hotel_id, currentTimeSelected, category,
+	).Scan(
+		&dataRaw.TotalOrders, &dataRaw.CancelledOrders, &dataRaw.TotalRefund, &dataRaw.TotalReceptionist, &dataRaw.TotalRevenue,
+	)
+
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return ResponseMenuHotel{
+				Message:      "Sorry We Cannot Found Statistic Data...",
+				Category:     "NOT_FOUND",
+				ErrorMessage: err.Error(),
+				IsSuccess:    false,
+			}
+		} else {
+			return ResponseMenuHotel{
+				Message:      "There's Something Error When Getting Statistic Data...",
+				Category:     "ERROR",
+				ErrorMessage: err.Error(),
+				IsSuccess:    false,
+			}
+		}
+	}
+
+	data.TotalVisits = int(dataRaw.TotalVisits.Int32)
+	data.TotalOrders = int(dataRaw.TotalOrders.Int32)
+	data.TotalReceptionist = int(dataRaw.TotalReceptionist.Int32)
+	data.TotalRefund = int(dataRaw.TotalRefund.Int32)
+	data.CancelledOrders = int(dataRaw.CancelledOrders.Int32)
+	data.TotalRevenue = dataRaw.TotalRevenue.String
+
+	return ResponseMenuHotel{
+		Message:   "Succesfully Getting Statistic Data",
+		Category:  "SUCCESS",
+		IsSuccess: true,
+		Data:      data,
+	}
+}
+
+func handleSelectedTime(selectedTime string) int64 {
+	currentTime := time.Now()
+	currentTimeMili := currentTime.UnixMilli()
+
+	defaultTime := int64(60 * 60 * 24 * 30 * 10000)
+
+	switch selectedTime {
+	case "all_time":
+		return 0
+	case "month":
+		return currentTimeMili - (defaultTime)
+	case "six_month":
+		return currentTimeMili - (defaultTime * 6)
+	case "year":
+		return currentTimeMili - (defaultTime * 12)
+	case "two_years":
+		return currentTimeMili - (defaultTime * 24)
+	default:
+		// default adalah sebulan
+		return currentTimeMili - (defaultTime)
+	}
+}

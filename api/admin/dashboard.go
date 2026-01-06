@@ -9,7 +9,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-var results struct {
+type ResultStatisticDataAdmin struct {
 	Mitras       int     `json:"total_mitras"`
 	Guests       int     `json:"total_guests"`
 	Hotels       int     `json:"total_hotels"`
@@ -18,7 +18,7 @@ var results struct {
 	Paid         int     `json:"total_paid_orders"`
 	Success      int     `json:"total_success_orders"`
 	Refund       int     `json:"total_refund_orders"`
-	Fail         int     `json:"total_fail_orders"`
+	Cancelled    int     `json:"total_cancelled_orders"`
 	TotalRevenue float64 `json:"total_revenue"`
 }
 
@@ -45,16 +45,19 @@ func Dashboard(c *gin.Context) {
             (SELECT COUNT(id) FROM transactions WHERE status='paid' AND created_at >= %d) as total_paid_orders,
             (SELECT COUNT(id) FROM transactions WHERE status='success' AND created_at >=%d) as total_success_orders,
             (SELECT COUNT(id) FROM transactions WHERE status='request_refund' AND created_at >=%d) as total_refund_orders,
-            (SELECT COUNT(id) FROM transactions WHERE status='fail' AND created_at >=%d) as total_fail_orders,
+            (SELECT COUNT(id) FROM transactions WHERE status='cancelled' AND created_at >=%d) as total_fail_orders,
             (SELECT COALESCE(SUM(total_price), 0) FROM transactions WHERE created_at >=%d) as total_revenue
     `, currentTimeSelected, currentTimeSelected, currentTimeSelected, currentTimeSelected, currentTimeSelected, currentTimeSelected, currentTimeSelected, currentTimeSelected, currentTimeSelected, currentTimeSelected)
 
 	// Gunakan QueryRow karena kita hanya mengharapkan satu baris hasil
+
+	var result ResultStatisticDataAdmin
+
 	err = db.QueryRow(query).Scan(
-		&results.Mitras, &results.Guests, &results.Hotels,
-		&results.Orders, &results.Pending, &results.Paid,
-		&results.Success, &results.Refund, &results.Fail,
-		&results.TotalRevenue,
+		&result.Mitras, &result.Guests, &result.Hotels,
+		&result.Orders, &result.Pending, &result.Paid,
+		&result.Success, &result.Refund, &result.Cancelled,
+		&result.TotalRevenue,
 	)
 
 	if err != nil {
@@ -64,7 +67,7 @@ func Dashboard(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{
 		"message": "Data Dashboard Berhasil Diambil",
-		"data":    results,
+		"data":    result,
 	})
 }
 

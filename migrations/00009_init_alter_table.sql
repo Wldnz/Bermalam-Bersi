@@ -49,10 +49,11 @@ ALTER TABLE `voucher_hotel_type_rooms` ADD FOREIGN KEY (`id_voucher`) REFERENCES
 ALTER TABLE `voucher_hotel_type_rooms` ADD FOREIGN KEY (`id_hotel_type_room`) REFERENCES `hotel_type_rooms` (`id`);
 
 -- Relasi Fitur Tambahan (Sanction, FAQ, Feedback, Missing Stuffs)
+ALTER TABLE `hotel_receptionists` ADD FOREIGN KEY (`id_user`) REFERENCES `users` (`id`);
+ALTER TABLE `hotel_receptionists` ADD FOREIGN KEY (`id_hotel`) REFERENCES `hotels` (`id`);
 ALTER TABLE `hotel_sanctions` ADD FOREIGN KEY (`id_hotel`) REFERENCES `hotels` (`id`);
 ALTER TABLE `hotel_sanctions` ADD FOREIGN KEY (`id_sanction`) REFERENCES `sanctions` (`id`);
-ALTER TABLE `hotel_feedback` ADD FOREIGN KEY (`id_user`) REFERENCES `users` (`id`);
-ALTER TABLE `hotel_feedback` ADD FOREIGN KEY (`id_type_room`) REFERENCES `hotel_type_rooms` (`id`);
+ALTER TABLE `hotel_feedback` ADD FOREIGN KEY (`id_transaction`) REFERENCES `transactions` (`id`);
 ALTER TABLE `faqs` ADD FOREIGN KEY (`id_hotel`) REFERENCES `hotels` (`id`);
 ALTER TABLE `missing_stuffs` ADD FOREIGN KEY (`id_hotel`) REFERENCES `hotels` (`id`);
 ALTER TABLE `missing_stuff_images` ADD FOREIGN KEY (`id_missing_stuff`) REFERENCES `missing_stuffs` (`id`);
@@ -66,9 +67,10 @@ ALTER TABLE `missing_stuff_images` DROP FOREIGN KEY `missing_stuff_images_ibfk_1
 ALTER TABLE `missing_stuffs` DROP FOREIGN KEY `missing_stuffs_ibfk_1`;
 ALTER TABLE `faqs` DROP FOREIGN KEY `faqs_ibfk_1`;
 ALTER TABLE `hotel_feedback` DROP FOREIGN KEY `hotel_feedback_ibfk_1`;
-ALTER TABLE `hotel_feedback` DROP FOREIGN KEY `hotel_feedback_ibfk_2`;
 ALTER TABLE `hotel_sanctions` DROP FOREIGN KEY `hotel_sanctions_ibfk_1`;
 ALTER TABLE `hotel_sanctions` DROP FOREIGN KEY `hotel_sanctions_ibfk_2`;
+ALTER TABLE `hotel_receptionists` DROP FOREIGN KEY `hotel_sanctions_ibfk_1`;
+ALTER TABLE `hotel_receptionists` DROP FOREIGN KEY (`hotel_sanctions_ibfk_1`;
 ALTER TABLE `voucher_hotel_type_rooms` DROP FOREIGN KEY `voucher_hotel_type_rooms_ibfk_1`;
 ALTER TABLE `voucher_hotel_type_rooms` DROP FOREIGN KEY `voucher_hotel_type_rooms_ibfk_2`;
 ALTER TABLE `transaction_vouchers` DROP FOREIGN KEY `transaction_vouchers_ibfk_1`;
