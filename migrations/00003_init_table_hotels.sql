@@ -120,7 +120,7 @@ CREATE TABLE `hotel_receptionists`(
   `updated_at` bigint NOT NULL,
   `created_by` int,
   `updated_by` int
-)
+);
 
 
 
