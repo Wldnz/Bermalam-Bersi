@@ -1,14 +1,14 @@
 package api
 
 import (
+	"fmt"
 	"net/http"
 
 	"bersi.bermalam.id/api/admin"
 	admin_management_hotel "bersi.bermalam.id/api/admin/management-hotels"
 	admin_management_rooms "bersi.bermalam.id/api/admin/management-hotels/management-rooms"
 	"bersi.bermalam.id/api/auth"
-	"bersi.bermalam.id/models"
-	sendemail "bersi.bermalam.id/utils/sendEmail"
+	guest "bersi.bermalam.id/api/guest/hotels"
 	"github.com/gin-gonic/gin"
 )
 
@@ -34,6 +34,8 @@ func InitiliazeApi(g *gin.Engine) {
 	})
 
 	g.POST("/sign-in", auth.Login)
+	g.POST("/sign-in-google", auth.LoginWithGoogle)
+	g.GET("/auth/google", auth.LoginWithGoogleCallBack)
 	g.GET("/logout", auth.Logout)
 
 	g.POST("/sign-up-mitra", auth.RegisterMitra)
@@ -51,6 +53,7 @@ func InitiliazeApi(g *gin.Engine) {
 
 	// tambahkan middleware willlllllllllllllllllllllllll 1 januari 2026 damn, 9 hari lagi deadline :D
 	// lu salah willl... deadline pengumpulan tanggal 6 wkwkwk, 3 hari lagi - 3 januari 2026
+	// dan sekarang tanggal 7 progress gak bedah jauh wwkwkwk....
 
 	g.GET("/admin/dashboard", admin.Dashboard)
 	g.GET("/admin/accounts", admin.GetAccounts)
@@ -64,29 +67,18 @@ func InitiliazeApi(g *gin.Engine) {
 	g.GET("/admin/hotels/:id", admin_management_hotel.DetailHotel)
 	g.GET("/admin/type-rooms/:id", admin_management_rooms.GetDetailRooms)
 
-	g.GET("/test-email", func(c *gin.Context) {
+	// guest / public api
+	g.GET("/hotels", guest.FindHotels)
+	g.GET("/hotels/:id", guest.DetailHotel)
 
-		email := c.Query("email")
-
-		data := &models.SenderEmailNeeded{
-			Subject: "Congratulations On Your Summit!",
-			Message: "Hello, Wildan! \n Thanks FOr Summiting Yaw!",
-			To:      []string{email},
-			Cc:      []string{email},
-		}
-
-		if err := sendemail.SendEmail(data); err != nil {
-			c.JSON(500, gin.H{
-				"message": "Sending Email Wass Success",
-				"error":   err.Error(),
-			})
-			return
-		}
+	g.GET("/byte-to-string", func(c *gin.Context) {
 
 		c.JSON(200, gin.H{
-			"message": "Sending Email Wass Success",
+			"message": "OK",
+			"data":    fmt.Sprintf("%s", "ewogICJpZCI6ICIxMTEyMzI2OTY1ODA3OTAxMDk4MjQiLAogICJlbWFpbCI6ICJ3aWxkYW5vZmZpY2lhbDMyQGdtYWlsLmNvbSIsCiAgInZlcmlmaWVkX2VtYWlsIjogdHJ1ZSwKICAicGljdHVyZSI6ICJodHRwczovL2xoMy5nb29nbGV1c2VyY29udGVudC5jb20vYS0vQUxWLVVqWHZrTVoyVEN5VjI2RTVKLWRzcVZLODBfNWhMU2RBTXVZQVRnTmlTRlJMaE5iNWRzbzk9czk2LWMiCn0K"),
 		})
-
 	})
+
+	// booking hotel management here
 
 }
