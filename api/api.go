@@ -9,6 +9,7 @@ import (
 	admin_management_rooms "bersi.bermalam.id/api/admin/management-hotels/management-rooms"
 	"bersi.bermalam.id/api/auth"
 	guest "bersi.bermalam.id/api/guest/hotels"
+	guest_transactions "bersi.bermalam.id/api/guest/transactions"
 	"github.com/gin-gonic/gin"
 )
 
@@ -70,6 +71,8 @@ func InitiliazeApi(g *gin.Engine) {
 	// guest / public api
 	g.GET("/hotels", guest.FindHotels)
 	g.GET("/hotels/:id", guest.DetailHotel)
+
+	g.POST("/create-booking", guest_transactions.CreateTransaction)
 
 	g.GET("/byte-to-string", func(c *gin.Context) {
 

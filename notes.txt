@@ -61,3 +61,6 @@ hotel_personal_information
  bank_account varchar
  bank_name varchar
  bank_account_owned_by varchar
+
+dokue response
+

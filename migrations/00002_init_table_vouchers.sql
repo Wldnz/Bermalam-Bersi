@@ -9,6 +9,8 @@ CREATE TABLE `vouchers` (
   `category` ENUM ('discount', 'cashback', 'free_stuff') DEFAULT 'discount',
   `poin_exchange` int DEFAULT 0,
   `permisson` bool DEFAULT 1,
+  `discount`  decimal(3,1) DEFAULT 0,
+  `cashback` int DEFAULT 0,
   `expired_at` bigint NOT NULL,
   `created_at` bigint NOT NULL,
   `updated_at` bigint NOT NULL,
