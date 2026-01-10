@@ -73,6 +73,8 @@ func InitiliazeApi(g *gin.Engine) {
 	g.GET("/hotels/:id", guest.DetailHotel)
 
 	g.POST("/create-booking", guest_transactions.CreateTransaction)
+	g.GET("/status-transaction-doku/:invoice", guest_transactions.CheckTransactionStatus)
+	g.POST("/transactions/callback", guest_transactions.CallBackTransactionDoku)
 
 	g.GET("/byte-to-string", func(c *gin.Context) {
 

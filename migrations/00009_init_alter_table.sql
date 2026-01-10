@@ -36,6 +36,7 @@ ALTER TABLE `hotel_rooms` ADD FOREIGN KEY (`id_type_room`) REFERENCES `hotel_typ
 
 -- Relasi Transaksi & Booking
 ALTER TABLE `transactions` ADD FOREIGN KEY (`id_user`) REFERENCES `users` (`id`);
+ALTER TABLE `transaction_doku_informations` ADD FOREIGN KEY (`id_transaction`) REFERENCES `transactions` (`id`);
 ALTER TABLE `booking` ADD FOREIGN KEY (`id_transaction`) REFERENCES `transactions` (`id`);
 ALTER TABLE `booking` ADD FOREIGN KEY (`id_type_room`) REFERENCES `hotel_type_rooms` (`id`);
 ALTER TABLE `other_bills` ADD FOREIGN KEY (`id_booking`) REFERENCES `transactions` (`id`);
@@ -43,6 +44,7 @@ ALTER TABLE `request_refund_transaction` ADD FOREIGN KEY (`id_transaction`) REFE
 
 -- Relasi Voucher
 ALTER TABLE `user_vouchers` ADD FOREIGN KEY (`id_user`) REFERENCES `users` (`id`);
+ALTER TABLE `user_vouchers` ADD FOREIGN KEY (`id_voucher`) REFERENCES `vouchers` (`id`);
 ALTER TABLE `transaction_vouchers` ADD FOREIGN KEY (`id_user_voucher`) REFERENCES `user_vouchers` (`id`);
 ALTER TABLE `transaction_vouchers` ADD FOREIGN KEY (`id_transaction`) REFERENCES `transactions` (`id`);
 ALTER TABLE `voucher_hotel_type_rooms` ADD FOREIGN KEY (`id_voucher`) REFERENCES `vouchers` (`id`);
@@ -76,8 +78,10 @@ ALTER TABLE `voucher_hotel_type_rooms` DROP FOREIGN KEY `voucher_hotel_type_room
 ALTER TABLE `transaction_vouchers` DROP FOREIGN KEY `transaction_vouchers_ibfk_1`;
 ALTER TABLE `transaction_vouchers` DROP FOREIGN KEY `transaction_vouchers_ibfk_2`;
 ALTER TABLE `user_vouchers` DROP FOREIGN KEY `user_vouchers_ibfk_1`;
+ALTER TABLE `user_vouchers` DROP FOREIGN KEY `user_vouchers_ibfk_2`;
 ALTER TABLE `request_refund_transaction` DROP FOREIGN KEY `request_refund_transaction_ibfk_1`;
 ALTER TABLE `other_bills` DROP FOREIGN KEY `other_bills_ibfk_1`;
+ALTER TABLE `transaction_doku_informations` DROP FOREIGN KEY `transaction_doku_informations_ibfk_1`;
 ALTER TABLE `booking` DROP FOREIGN KEY `booking_ibfk_1`;
 ALTER TABLE `booking` DROP FOREIGN KEY `booking_ibfk_2`;
 ALTER TABLE `transactions` DROP FOREIGN KEY `transactions_ibfk_1`;

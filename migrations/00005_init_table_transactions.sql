@@ -90,10 +90,23 @@ CREATE TABLE `hotel_feedback` (
   `updated_by` int
 );
 
+CREATE TABLE `transaction_doku_informations` (
+  `id` int PRIMARY KEY AUTO_INCREMENT,
+  `id_transaction` int NOT NULL,
+  `invoice_id` varchar(60) NOT NULL,
+  `payment_link` varchar(255) NOT NULL,
+  `category` ENUM ('dp', 'full') DEFAULT 'full',
+  `created_at` bigint NOT NULL,
+  `updated_at` bigint NOT NULL,
+  `created_by` int,
+  `updated_by` int
+);
+
 
 
 -- +goose Down
 
+DROP TABLE IF EXISTS transaction_doku_informations;
 DROP TABLE IF EXISTS hotel_feedback;
 DROP TABLE IF EXISTS transaction_vouchers;
 DROP TABLE IF EXISTS other_bills;

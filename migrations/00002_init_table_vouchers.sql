@@ -21,6 +21,8 @@ CREATE TABLE `vouchers` (
 CREATE TABLE `user_vouchers` (
   `id` int PRIMARY KEY AUTO_INCREMENT,
   `id_user` int,
+  `id_voucher` int,
+  `total_price_reduction` decimal(10,2) DEFAULT 0,
   `status` ENUM ('active', 'inactive', 'expired') DEFAULT 'active',
   `expired_at` bigint NOT NULL,
   `created_at` bigint NOT NULL,

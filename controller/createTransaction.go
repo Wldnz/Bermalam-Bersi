@@ -24,6 +24,9 @@ func CreateTransaction(
 	category_transaction string,
 	level string,
 	payment_link string,
+	user_voucher_id int,
+	total_price_reduction int,
+	invoice_number string,
 	roomPrices []ResultPriceTypeRooms,
 ) ResponseCreateTransaction {
 
@@ -115,6 +118,69 @@ func CreateTransaction(
 					Category:     "ERROR",
 					IsSuccess:    false,
 				}
+			}
+		}
+	}
+
+	// next i should adding transaction_doku_informations, it's important btw
+
+	queryHotelInformations := `INSERT INTO transaction_doku_informations(id_transaction, invoice_id, payment_link, category, created_at, updated_at, created_by, updated_by)
+	VALUES( ?, ?, ?, ?, ?, ?, ?, ? )`
+
+	res, err = tx.Exec(queryHotelInformations,
+		lastInsertId,
+		invoice_number,
+		payment_link,
+		category_transaction,
+		currentTimeMili,
+		currentTimeMili,
+		user_id,
+		user_id,
+	)
+
+	if err != nil {
+		return ResponseCreateTransaction{
+			Message:      "There's Something Error When Want Want To Invoice Number Into Database",
+			ErrorMessage: err.Error(),
+			Category:     "ERROR",
+			IsSuccess:    false,
+		}
+	}
+
+	if user_voucher_id != 0 {
+
+		queryVoucher := `INSERT INTO transaction_vouchers( id_user_voucher, id_transaction, total_price_reduction, created_at, updated_at, created_by, updated_by )
+	VALUES ( ?, ?, ?, ?, ?, ?, ? )`
+
+		res, err = tx.Exec(queryVoucher,
+			user_voucher_id,
+			lastInsertId,
+			total_price_reduction,
+			currentTimeMili,
+			currentTimeMili,
+			user_id,
+			user_id,
+		)
+
+		if err != nil {
+			return ResponseCreateTransaction{
+				Message:      "There's Something Error When Want Want To Store History Used Voucher..",
+				ErrorMessage: err.Error(),
+				Category:     "ERROR",
+				IsSuccess:    false,
+			}
+		}
+
+		queryVoucher = `UPDATE user_vouchers SET status='inactive', updated_at=? WHERE id =?`
+
+		res, err = tx.Exec(queryVoucher, currentTimeMili, user_voucher_id)
+
+		if err != nil {
+			return ResponseCreateTransaction{
+				Message:      "There's Something Error When Want To Updating Status Voucher Into Inactive",
+				ErrorMessage: err.Error(),
+				Category:     "ERROR",
+				IsSuccess:    false,
 			}
 		}
 	}

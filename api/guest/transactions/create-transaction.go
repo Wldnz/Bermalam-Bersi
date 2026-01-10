@@ -32,7 +32,7 @@ import (
 // }
 
 type VoucherUsedTransaction struct {
-	ID   int    `json:"id_voucher"`
+	ID   int    `json:"id_user_voucher"`
 	Name string `json:"name"`
 }
 
@@ -148,11 +148,36 @@ func CreateTransaction(c *gin.Context) {
 		return
 	}
 
+	// mendapatkan totalDiscount
+
+	totalDiscountResponse := controller.GetTotalDiscountPrice(totalPriceResponse.TotalPrice, credentials.User.ID, data.Voucher.ID)
+
+	if !totalDiscountResponse.IsSuccess {
+		if totalDiscountResponse.Category == "NOT_FOUND" {
+			c.JSON(http.StatusNotFound, gin.H{
+				"message":     totalDiscountResponse.Message,
+				"error":       totalDiscountResponse.ErrorMessage,
+				"status_code": http.StatusNotFound,
+			})
+		} else {
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"message":     totalDiscountResponse.Message,
+				"error":       totalDiscountResponse.ErrorMessage,
+				"status_code": http.StatusInternalServerError,
+			})
+		}
+		return
+	}
+
+	transaction.TotalPrice = totalPriceResponse.TotalPrice - totalDiscountResponse.TotalDiscountPrice
+
+	invoiceNumber := fmt.Sprintf("BOOK-%d", currentTimeMili)
+
 	// sementara seperti ini dlu.... (deadline mepet... wkwkwk)
 	paylodMaps := map[string]interface{}{
 		"order": map[string]interface{}{
-			"invoice_number": fmt.Sprintf("BOOK-%d", currentTimeMili),
-			"amount":         totalPriceResponse.TotalPrice + 3000,
+			"invoice_number": invoiceNumber,
+			"amount":         transaction.TotalPrice + 3000,
 			"currency":       data.Currency,
 			"language":       data.Language,
 			// "callback_url": "http://merchantcallbackurl.domain/",
@@ -162,12 +187,16 @@ func CreateTransaction(c *gin.Context) {
 		},
 		"payment": map[string]interface{}{
 			"payment_due_date": 60 * 12,
+			// "payment_method_types": []string{
+			// 	"QRIS",
+			// },
 		},
 		// "line-items": []interface{}{},
 		"customer": map[string]interface{}{
 			"id":         credentials.User.ID,
 			"first_name": credentials.User.FirstName,
-			"email":      credentials.User.Email,
+			"email":      data.Email,
+			"phone":      data.PhoneCountryCode + data.Phone,
 		},
 	}
 
@@ -195,7 +224,7 @@ func CreateTransaction(c *gin.Context) {
 
 	respCreateTransaction := controller.CreateTransaction(
 		credentials.User.ID,
-		totalPriceResponse.TotalPrice,
+		transaction.TotalPrice,
 		data.TotalRooms,
 		data.Adults,
 		data.Children,
@@ -204,6 +233,9 @@ func CreateTransaction(c *gin.Context) {
 		data.CategoryBooking,
 		transaction.LevelTransaction,
 		paymentLink,
+		data.Voucher.ID,
+		totalDiscountResponse.TotalDiscountPrice,
+		invoiceNumber,
 		totalPriceResponse.PriceRooms,
 	)
 
