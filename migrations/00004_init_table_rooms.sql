@@ -103,9 +103,21 @@ CREATE TABLE `voucher_hotel_type_rooms` (
   `updated_by` int
 );
 
+CREATE TABLE `hotel_room_bookings` (
+  `id` int PRIMARY KEY AUTO_INCREMENT,
+  `id_hotel_room` int,
+  `check_in_at` bigint NOT NULL,
+  `check_out_at` bigint NOT NULL,
+  `created_at` bigint NOT NULL,
+  `updated_at` bigint NOT NULL,
+  `created_by` int,
+  `updated_by` int
+);
+
 
 
 -- +goose Down
+DROP TABLE IF EXISTS hotel_room_bookings;
 DROP TABLE IF EXISTS voucher_hotel_type_rooms;
 DROP TABLE IF EXISTS hotel_type_room_rules;
 DROP TABLE IF EXISTS hotel_type_room_benefit;

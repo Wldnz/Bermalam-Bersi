@@ -44,6 +44,8 @@ type ResponseCheckTotalPrice struct {
 }
 
 func GetTotalPriceRoom(
+	check_in_at int,
+	check_out_at int,
 	rooms []RequestRoomBookingData,
 	level_transaction string,
 ) ResponseCheckTotalPrice {
@@ -91,12 +93,20 @@ func GetTotalPriceRoom(
 				INNER JOIN hotel_type_room_dynamic_price htrdp ON htrdp.id_price_period = htrpp.id
 				LEFT JOIN hotel_type_room_price_period htrpp_2 ON htrpp_2.id_type_room = htr.id AND htrpp_2.default=0
 				LEFT JOIN hotel_type_room_dynamic_price htrdp_2 ON htrdp_2.id_price_period = htrpp_2.id
-				LEFT JOIN hotel_rooms hr ON hr.id_type_room = htr.id AND hr.status = 'available'
+				LEFT JOIN hotel_rooms hr ON hr.id_type_room = htr.id AND hr.status = 'available' AND hr.id NOT IN (
+					SELECT id_hotel_room FROM hotel_room_bookings
+					WHERE NOT (check_out_at <=  ?  OR check_in_at >= ?) # pertama '?' check_in kedua check_out
+				) 
 				WHERE htr.id=?
 				GROUP BY htr.id
 				HAVING total_rooms >= ?`, type_price, type_price_2)
 
-		if err = db.QueryRow(query, room.ID, room.Quantity).Scan(&data.DefaultPrice, &data.MinimumPrice, &data.TotalRooms); err != nil {
+		if err = db.QueryRow(query,
+			check_in_at,
+			check_out_at,
+			room.ID,
+			room.Quantity,
+		).Scan(&data.DefaultPrice, &data.MinimumPrice, &data.TotalRooms); err != nil {
 			if err == sql.ErrNoRows {
 				return ResponseCheckTotalPrice{
 					Message:      "Cannot Found Rooms Or The Quantity Is Over The Stock Room",

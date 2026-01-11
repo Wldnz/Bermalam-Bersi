@@ -76,6 +76,9 @@ func InitiliazeApi(g *gin.Engine) {
 	g.GET("/status-transaction-doku/:invoice", guest_transactions.CheckTransactionStatus)
 	g.POST("/transactions/callback", guest_transactions.CallBackTransactionDoku)
 
+	g.GET("/transactions", guest_transactions.HistoryTransactions)
+	g.GET("/transactions/:id", guest_transactions.DetailTransaction)
+
 	g.GET("/byte-to-string", func(c *gin.Context) {
 
 		c.JSON(200, gin.H{

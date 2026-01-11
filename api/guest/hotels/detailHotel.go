@@ -2,7 +2,9 @@ package guest
 
 import (
 	"database/sql"
+	"fmt"
 	"net/http"
+	"time"
 
 	// "time"
 
@@ -139,6 +141,16 @@ func DetailHotel(c *gin.Context) {
 		return
 	}
 
+	currenTime := time.Now()
+	currenTimeMili := currenTime.UnixMilli()
+	tomorrowTimeMili := (60 * 60 * 24 * 1000) + currenTimeMili
+
+	check_in := c.DefaultQuery("check_in", fmt.Sprintf("%d", currenTimeMili))
+	check_out := c.DefaultQuery("check_out", fmt.Sprintf("%d", tomorrowTimeMili))
+	adult := c.DefaultQuery("total_adults", "1")
+	children := c.DefaultQuery("total_childrens", "0")
+	room := c.DefaultQuery("total_rooms", "1")
+
 	// hotels, hotel_images, hotel_facilities, hotel_type_rooms, hotel_rooms, hotel_feedback, faq, hotel_near_location?, hotel_type_rules, and other hotel may u like...
 
 	HotelDetail := getHotelDetail(id)
@@ -190,7 +202,13 @@ func DetailHotel(c *gin.Context) {
 		return
 	}
 
-	TypeRooms := getHotelTypeRooms(id)
+	TypeRooms := getHotelTypeRooms(id,
+		check_in,
+		check_out,
+		adult,
+		children,
+		room,
+	)
 
 	if !TypeRooms.Response.IsSuccess && TypeRooms.Response.Category == "ERROR" {
 		c.JSON(http.StatusInternalServerError, gin.H{
@@ -246,7 +264,9 @@ func DetailHotel(c *gin.Context) {
 
 }
 
-func getHotelDetail(hotel_id string) ResponseDetailHotel {
+func getHotelDetail(
+	hotel_id string,
+) ResponseDetailHotel {
 
 	db, err := config.ConnectToDatabase()
 
@@ -452,7 +472,14 @@ func getHotelFacilities(hotel_id string) ResponseHotelFacilities {
 }
 
 // should send the rooms_qty?
-func getHotelTypeRooms(hotel_id string) ResponseHotelTypeRooms {
+func getHotelTypeRooms(
+	hotel_id string,
+	check_in string,
+	check_out string,
+	adult string,
+	children string,
+	total_rooms string,
+) ResponseHotelTypeRooms {
 	db, err := config.ConnectToDatabase()
 
 	if err != nil {
@@ -469,23 +496,35 @@ func getHotelTypeRooms(hotel_id string) ResponseHotelTypeRooms {
 	defer db.Close()
 
 	query := `SELECT 
-				htr.id, htr.name, htr.description, htr.free_cancel, htr.how_long_to_cancel, htr.refundable, htr.room_size, htr.bed_type, htr.max_adult, htr.max_children,
-				COUNT(hr.id) AS total_rooms, MIN(htrdp.price_per_night) AS default_price, COALESCE(MIN(htrdp_2.price_per_night), 0) AS minimum_price,
-				htri.url AS image_url
-			FROM hotel_type_rooms htr
-			INNER JOIN hotel_type_room_price_period htrpp ON htrpp.id_type_room = htr.id AND htrpp.default=1
-			INNER JOIN hotel_type_room_dynamic_price htrdp ON htrdp.id_price_period = htrpp.id
-			LEFT JOIN hotel_type_room_price_period htrpp_2 ON htrpp_2.id_type_room = htr.id AND htrpp_2.default=0
-			LEFT JOIN hotel_type_room_dynamic_price htrdp_2 ON htrdp_2.id_price_period = htrpp_2.id
-			LEFT JOIN (
-				SELECT id_type_room, URL FROM  hotel_type_room_images WHERE isPinned = 1 LIMIT 1
+			htr.id, htr.name, htr.description, htr.free_cancel, htr.how_long_to_cancel, htr.refundable, htr.room_size, htr.bed_type, htr.max_adult, htr.max_children,
+			COUNT(DISTINCT hr.id) AS total_rooms, MIN(htrdp.price_per_night) AS default_price, COALESCE(MIN(htrdp_2.price_per_night), 0) AS minimum_price,
+			htri.url AS image_url
+		FROM hotel_type_rooms htr
+		INNER JOIN hotel_type_room_price_period htrpp ON htrpp.id_type_room = htr.id AND htrpp.default=1
+		INNER JOIN hotel_type_room_dynamic_price htrdp ON htrdp.id_price_period = htrpp.id
+		LEFT JOIN hotel_type_room_price_period htrpp_2 ON htrpp_2.id_type_room = htr.id AND htrpp_2.default=0
+		LEFT JOIN hotel_type_room_dynamic_price htrdp_2 ON htrdp_2.id_price_period = htrpp_2.id
+		LEFT JOIN (
+			SELECT id_type_room, MAX(url) AS url FROM  hotel_type_room_images WHERE isPinned = 1 
+			GROUP BY id_type_room
 			) htri ON htri.id_type_room = htr.id
-			LEFT JOIN hotel_rooms hr ON hr.id_type_room = htr.id AND hr.status = 'available'
-			WHERE htr.id_hotel=?
-			GROUP BY htr.id, htri.url
-			HAVING total_rooms >= 1;`
+		LEFT JOIN hotel_rooms hr ON hr.id_type_room = htr.id AND hr.status = 'available'
+		AND hr.id NOT IN (
+			SELECT id_hotel_room FROM hotel_room_bookings
+			WHERE NOT (check_out_at <=  ?  OR check_in_at >= ?)
+		)
+		WHERE htr.id_hotel=? AND htr.max_adult >= ? AND htr.max_children >= ?
+		GROUP BY htr.id, htri.url
+		HAVING total_rooms >= ?;`
 
-	rows, err := db.Query(query, hotel_id)
+	rows, err := db.Query(query,
+		check_in,
+		check_out,
+		hotel_id,
+		adult,
+		children,
+		total_rooms,
+	)
 
 	if err != nil {
 		return ResponseHotelTypeRooms{

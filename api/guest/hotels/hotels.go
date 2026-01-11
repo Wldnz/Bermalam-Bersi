@@ -1,8 +1,10 @@
 package guest
 
 import (
+	"fmt"
 	"net/http"
 	"strconv"
+	"time"
 
 	// "time"
 
@@ -24,16 +26,16 @@ type ResultDataHotel struct {
 
 func FindHotels(c *gin.Context) {
 
-	// currenTime := time.Now()
-	// currenTimeMili := currenTime.UnixMilli()
-	// tomorrowTimeMili := (60 * 60 * 24 * 1000) + currenTimeMili
+	currenTime := time.Now()
+	currenTimeMili := currenTime.UnixMilli()
+	tomorrowTimeMili := (60 * 60 * 24 * 1000) + currenTimeMili
 
 	search := c.Query("search")
-	// check_in := c.DefaultQuery("check_in", fmt.Sprintf("%d", currenTimeMili))
-	// check_out := c.DefaultQuery("check_out", fmt.Sprintf("%d", tomorrowTimeMili))
+	check_in := c.DefaultQuery("check_in", fmt.Sprintf("%d", currenTimeMili))
+	check_out := c.DefaultQuery("check_out", fmt.Sprintf("%d", tomorrowTimeMili))
 	adult := c.DefaultQuery("total_adults", "1")
 	children := c.DefaultQuery("total_childrens", "0")
-	room := c.DefaultQuery("total_rooms", "1")
+	total_rooms := c.DefaultQuery("total_rooms", "1")
 	category := c.DefaultQuery("category_property", "all")
 
 	db, err := config.ConnectToDatabase()
@@ -47,7 +49,7 @@ func FindHotels(c *gin.Context) {
 		return
 	}
 
-	room_int, err := strconv.Atoi(room)
+	room_int, err := strconv.Atoi(total_rooms)
 
 	if err != nil {
 		// should i send error response?
@@ -71,7 +73,10 @@ func FindHotels(c *gin.Context) {
  FROM hotels h  
 		INNER JOIN hotel_type_rooms htr ON htr.id_hotel = h.id
 		INNER JOIN hotel_location hl ON hl.id_hotel = h.id
-		INNER JOIN hotel_rooms hr ON hr.id_type_room = htr.id
+		INNER JOIN hotel_rooms hr ON hr.id_type_room = htr.id AND hr.id NOT IN (
+			SELECT id_hotel_room FROM hotel_room_bookings
+			WHERE NOT (check_out_at <=  ?  OR check_in_at >= ?) # pertama '?' check_in kedua check_out
+		)
 		INNER JOIN hotel_type_room_price_period htrpp ON htrpp.id_type_room = htr.id
 		INNER JOIN hotel_type_room_dynamic_price htrdp ON htrdp.id_price_period = htrpp.id AND htrpp.default = 1
 		LEFT JOIN hotel_type_room_price_period htrpp_2 ON htrpp_2.id_type_room = htr.id
@@ -89,7 +94,7 @@ func FindHotels(c *gin.Context) {
 
 	// gemini said that room should be convert into int, cause it will make bunch on search this hotel lol...
 	// ini valid btw wkwkwk, msnya jadi kurang beberapa (jadi lebih cepet pastinya wkwkwk)
-	rows, err := db.Query(query, category, category, searchParam, searchParam, searchParam, adult, children, room_int)
+	rows, err := db.Query(query, check_in, check_out, category, category, searchParam, searchParam, searchParam, adult, children, room_int)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"message":     "There's Something Error When Getting Hotels",

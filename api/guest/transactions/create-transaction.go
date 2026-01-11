@@ -129,7 +129,12 @@ func CreateTransaction(c *gin.Context) {
 	}
 
 	// loop untuk mendapatkan totalHarga
-	totalPriceResponse := controller.GetTotalPriceRoom(data.Rooms, transaction.LevelTransaction)
+	totalPriceResponse := controller.GetTotalPriceRoom(
+		data.CheckInAt,
+		data.CheckOutAt,
+		data.Rooms,
+		transaction.LevelTransaction,
+	)
 
 	if !totalPriceResponse.IsSuccess {
 		if totalPriceResponse.Category == "NOT_FOUND" {

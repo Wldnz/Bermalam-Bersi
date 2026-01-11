@@ -33,6 +33,7 @@ ALTER TABLE `hotel_type_room_rules` ADD FOREIGN KEY (`id_type_room`) REFERENCES 
 ALTER TABLE `hotel_type_room_dynamic_price` ADD FOREIGN KEY (`id_price_period`) REFERENCES `hotel_type_room_price_period` (`id`);
 ALTER TABLE `hotel_type_room_images` ADD FOREIGN KEY (`id_type_room`) REFERENCES `hotel_type_rooms` (`id`);
 ALTER TABLE `hotel_rooms` ADD FOREIGN KEY (`id_type_room`) REFERENCES `hotel_type_rooms` (`id`);
+ALTER TABLE `hotel_room_bookings` ADD FOREIGN KEY (`id_hotel_room`) REFERENCES `hotel_rooms` (`id`);
 
 -- Relasi Transaksi & Booking
 ALTER TABLE `transactions` ADD FOREIGN KEY (`id_user`) REFERENCES `users` (`id`);
@@ -86,6 +87,7 @@ ALTER TABLE `booking` DROP FOREIGN KEY `booking_ibfk_1`;
 ALTER TABLE `booking` DROP FOREIGN KEY `booking_ibfk_2`;
 ALTER TABLE `transactions` DROP FOREIGN KEY `transactions_ibfk_1`;
 ALTER TABLE `hotel_rooms` DROP FOREIGN KEY `hotel_rooms_ibfk_1`;
+ALTER TABLE `hotel_room_bookings` DROP FOREIGN KEY `hotel_room_bookings_ibfk_1`;
 ALTER TABLE `hotel_type_room_images` DROP FOREIGN KEY `hotel_type_room_images_ibfk_1`;
 ALTER TABLE `hotel_type_room_dynamic_price` DROP FOREIGN KEY `hotel_type_room_dynamic_price_ibfk_1`;
 ALTER TABLE `hotel_type_room_price_period` DROP FOREIGN KEY `hotel_type_room_price_period_ibfk_1`;
