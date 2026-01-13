@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 
 	// "time"
@@ -22,6 +23,14 @@ type ResultDataHotel struct {
 	MinimumPrice string `json:"minimum_price"`
 	TotalRooms   string `json:"total_rooms"`
 	ImageURL     string `json:"image_url"`
+}
+
+type ResultRecomendation struct {
+	ID       int    `json:"id"`
+	HotelID  int    `json:"hotel_id"`
+	Label    string `json:"label"`
+	City     string `json:"city"`
+	Province string `json:"province"`
 }
 
 func FindHotels(c *gin.Context) {
@@ -48,6 +57,8 @@ func FindHotels(c *gin.Context) {
 		})
 		return
 	}
+
+	defer db.Close()
 
 	room_int, err := strconv.Atoi(total_rooms)
 
@@ -134,6 +145,86 @@ func FindHotels(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"message":     "Succesfully Getting Hotels",
 		"data":        hotels,
+		"status_code": http.StatusOK,
+	})
+
+}
+
+func RecomendationLocationHotel(c *gin.Context) {
+
+	search := c.Query("search")
+
+	if search == "" {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"message":     "Please Bring The Search Result",
+			"status_code": http.StatusBadRequest,
+		})
+		return
+	}
+
+	db, err := config.ConnectToDatabase()
+
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"message":     "There's Something Error When Connecting Into Database",
+			"error":       err.Error(),
+			"status_code": http.StatusInternalServerError,
+		})
+		return
+	}
+
+	defer db.Close()
+
+	query := `SELECT hl.id, h.id as hotel_id, CONCAT(h.name, ", ", hl.city, ", ", hl.province) as label, hl.city, hl.province FROM hotel_location hl
+		INNER JOIN hotels h ON h.id = hl.id_hotel
+			WHERE (h.name LIKE ? OR
+					hl.city LIKE ? OR
+						hl.province LIKE ?)
+			LIMIT 5`
+
+	searchParam := "%" + strings.ToLower(search) + "%"
+
+	recomendations := []ResultRecomendation{}
+
+	rows, err := db.Query(query, searchParam, searchParam, searchParam)
+
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"message":     "There's Something Error When Getting Data",
+			"error":       err.Error(),
+			"status_code": http.StatusInternalServerError,
+		})
+		return
+	}
+
+	defer rows.Close()
+
+	for rows.Next() {
+
+		var recomendation ResultRecomendation
+
+		if err = rows.Scan(&recomendation.ID, &recomendation.HotelID, &recomendation.Label, &recomendation.City, &recomendation.Province); err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"message":     "There's Something Error When Scanning Data",
+				"error":       err.Error(),
+				"status_code": http.StatusInternalServerError,
+			})
+			return
+		}
+		recomendations = append(recomendations, recomendation)
+	}
+
+	if len(recomendations) == 0 {
+		c.JSON(http.StatusNotFound, gin.H{
+			"message":     "Sorry We Cannot Found Any Data... ",
+			"status_code": http.StatusNotFound,
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message":     "Succesfully Getting Recommendation Text",
+		"data":        recomendations,
 		"status_code": http.StatusOK,
 	})
 

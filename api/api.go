@@ -71,6 +71,7 @@ func InitiliazeApi(g *gin.Engine) {
 	// guest / public api
 	g.GET("/hotels", guest.FindHotels)
 	g.GET("/hotels/:id", guest.DetailHotel)
+	g.GET("/hotel-recomendation-name", guest.RecomendationLocationHotel)
 
 	g.POST("/create-booking", guest_transactions.CreateTransaction)
 	g.GET("/status-transaction-doku/:invoice", guest_transactions.CheckTransactionStatus)
