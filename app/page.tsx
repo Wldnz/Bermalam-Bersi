@@ -1,5 +1,7 @@
 "use client"
+import ActionIcon from "@/components/Icons/Action";
 import BookingIcons from "@/components/Icons/Booking";
+import HotelCategoryIcon from "@/components/Icons/CategoryHotel";
 import Navigation from "@/components/Navigation";
 import Api from "@/utils/Api";
 import Image from "next/image";
@@ -77,7 +79,7 @@ export default function Home() {
 
   const [recomendations, setRecomendations] = useState<RecomendationTextResponse[]>([])
 
-  const [ recomendationTexts, setRecomendationTexts ] = useState<RecomendationText | null>()
+  const [recomendationTexts, setRecomendationTexts] = useState<RecomendationText | null>()
 
   const totalNight = Math.round((bookingData.checkOut - bookingData.checkIn) / oneDayMili);
 
@@ -110,18 +112,18 @@ export default function Home() {
           })
 
           const locations = Array.from(locationMaps.entries()).map(location => ({
-            province : location[0] as string,
-            cities : Array.from(location[1]) as string[],
+            province: location[0] as string,
+            cities: Array.from(location[1]) as string[],
           }))
 
           const hotels = datas.map(data => ({
-            id : data.hotel_id,
-            label : data.label,
+            id: data.hotel_id,
+            label: data.label,
           }))
 
           setRecomendationTexts({
-            hotels : hotels,
-            locations : locations,
+            hotels: hotels,
+            locations: locations,
           })
 
         }
@@ -212,59 +214,81 @@ export default function Home() {
                 />
                 <div className={`w-full p-1.5 ${recomendationTexts?.locations?.length ? "flex" : "hidden"} flex-col gap-2.5 bg-background absolute top-10 left-0 rounded-b-2xl`}>
                   {recomendationTexts?.locations.map(location => {
-                    return location.cities.map( (city, index) => {
+                    return location.cities.map((city, index) => {
                       return <button
-                      key={`${city}-recommendation-text-${index}`}
-                      className="w-full p-1.5 text-start cursor-pointer"
-                      onClick={() => {
-                        setBookingData(prev => {
-                          return {
-                            ...prev,
-                            ...{
-                              search: city
+                        key={`${city}-recommendation-text-${index}`}
+                        className="w-full p-1.5 text-start cursor-pointer"
+                        onClick={() => {
+                          setBookingData(prev => {
+                            return {
+                              ...prev,
+                              ...{
+                                search: city
+                              }
                             }
-                          }
-                        })
-                        setRecomendationTexts(null)
-                      }}
-                    >
-                      {city + ", " + location.province}
-                    </button>
-                    } )
+                          })
+                          setRecomendationTexts(null)
+                        }}
+                      >
+                        {city + ", " + location.province}
+                      </button>
+                    })
                   })}
                   {
                     recomendationTexts?.hotels.map((hotel, index) => {
                       return <button
-                      key={`${hotel.label}-recommendation-text-${index}`}
-                      className="w-full p-1.5 text-start cursor-pointer"
-                      onClick={() => {
-                        // pindahkan ke halaman detail hotel...
-                        setRecomendationTexts(null)
-                      }}
-                    >
-                      {hotel.label}
-                    </button>
+                        key={`${hotel.label}-recommendation-text-${index}`}
+                        className="w-full p-1.5 text-start cursor-pointer"
+                        onClick={() => {
+                          // pindahkan ke halaman detail hotel...
+                          setRecomendationTexts(null)
+                        }}
+                      >
+                        {hotel.label}
+                      </button>
                     })
                   }
                 </div>
               </div>
-            </div>
 
-            <div className="flex gap-2.5">
-              <button className="p-1 px-1.5 text-sm text-background bg-(--status-refund) rounded-xl">Semuanya</button>
-              <button className="p-1 px-1.5 text-sm text-background bg-(--status-refund) rounded-xl">Hotel</button>
-              <button className="p-1 px-1.5 text-sm text-background bg-(--status-refund) rounded-xl">Villa</button>
-              <button className="p-1 px-1.5 text-sm text-background bg-(--status-refund) rounded-xl">Apartemen</button>
-            </div>
+              <div className="flex gap-2.5 p-3">
+                <ButtonCategoryProperty currentCategory={bookingData.category} iconName="" label="Semuanya" name="all" setValue={setBookingData} />
+                <ButtonCategoryProperty currentCategory={bookingData.category} iconName="hotel" label="Hotel" name="hotel" setValue={setBookingData} />
+                <ButtonCategoryProperty currentCategory={bookingData.category} iconName="villa" label="Villa" name="villa" setValue={setBookingData} />
+                <ButtonCategoryProperty currentCategory={bookingData.category} iconName="apartment" label="Apartemen" name="apartment" setValue={setBookingData} />
+              </div>
 
-            <div className="w-full bg-blue-900">
-              <h4>Riwayat Pencarian</h4>
-              <div className="flex flex-wrap">
-                <div className="bg-background p-1.5 rounded-lg text-sm">
-                  <span>Hello World</span>
+              <div className="w-full flex flex-col gap-3 mt-10">
+                <h4 className="font-bold text-background">Riwayat Pencarian</h4>
+                <div className="flex flex-wrap gap-2.5">
+
+                  <div 
+                    className="flex justify-between items-center min-w-60 bg-background p-2 px-3 border-2 border-(--status-refund) rounded-xl"
+                  >
+                    <button
+                      className="w-full text-start"
+                      onClick={() => console.log('insert search...')}
+                    >
+                      Jakarta
+                    </button>
+                    <button
+                      className="cursor-pointer"
+                      type="button"
+                      title="close-history-search"
+                      onClick={() => console.log('close-search')}
+                    >
+                      <ActionIcon
+                        className="w-5 h-5 "
+                        name="close_tight"
+                      />  
+                    </button>
+                  </div>
+
                 </div>
               </div>
+
             </div>
+
 
           </div>
         </div>
@@ -345,7 +369,8 @@ function ButtonSelectTotalGuest({
         return {
           ...prev,
           ...{
-            guest: !showInput
+            guest: !showInput,
+            room:false,
           }
         }
       })}
@@ -440,7 +465,8 @@ function ButtonSelectTotalRooms({
         return {
           ...prev,
           ...{
-            room: !showInput
+            room: !showInput,
+            guest:false,
           }
         }
       })}
@@ -485,3 +511,35 @@ function ButtonSelectTotalRooms({
   </div>
 }
 
+function ButtonCategoryProperty({
+  iconName,
+  name,
+  label,
+  currentCategory,
+  setValue,
+}: {
+  iconName: string,
+  name: string,
+  label: string,
+  currentCategory: string,
+  setValue: Dispatch<SetStateAction<BookingState>>,
+}) {
+
+  const isCurrentCategory = currentCategory == name
+
+  return <button
+    className={`flex items-center gap-1.5 p-2 px-4 ${isCurrentCategory ? "font-bold bg-(--status-refund) text-background" : "bg-background text-(--status-refund)"} rounded-xl cursor-pointer`}
+    onClick={() => setValue(prev => {
+      return {
+        ...prev,
+        ...{
+          category: name
+        }
+      }
+    })}
+  >
+    {iconName == "" ? <></> : <HotelCategoryIcon className={`w-6 h-6 ${isCurrentCategory ? "text-background" : "text-(--status-refund)"}`} name={iconName} />}
+    <span>{label}</span>
+  </button>
+
+}
