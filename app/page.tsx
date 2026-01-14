@@ -1,57 +1,25 @@
 "use client"
-import ActionIcon from "@/components/Icons/Action";
-import BookingIcons from "@/components/Icons/Booking";
-import HotelCategoryIcon from "@/components/Icons/CategoryHotel";
+import { BookingState, RecomendationText, RecomendationTextResponse, SearchHistoryLocation, ShowInputGuestAndRoom } from "@/components/FindHotel/models";
 import Navigation from "@/components/Navigation";
 import Api from "@/utils/Api";
-import Image from "next/image";
-import { Dispatch, RefObject, SetStateAction, useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useDebounce } from "use-debounce";
+import SummaryNights from "@/components/FindHotel/SummaryNight";
+import SearchBar from "@/components/FindHotel/SearchBar";
+import HistorySearch from "@/components/FindHotel/HistorySearch";
+import CategoryProperty from "@/components/FindHotel/CategoryProperty";
+import BookingDate from "@/components/FindHotel/BookingDate";
+import { useRouter } from "next/navigation";
+import Image from "next/image";
+import BookingIcons from "@/components/Icons/Booking";
+import HotelIcons from "@/components/Icons/Hotel";
 
 
-interface TotalGuests {
-  adults: number
-  childrens: number
-}
 
-interface ShowInputGuestAndRoom {
-  guest: boolean
-  room: boolean
-}
-
-interface BookingState {
-  checkIn: number
-  checkOut: number
-  totalRooms: number
-  guests: TotalGuests
-  category: string
-  search: string
-}
-
-interface RecomendationTextResponse {
-  id: number
-  hotel_id: number
-  label: string
-  city: string
-  province: string
-}
-
-interface RecomendationText {
-
-  locations: {
-    province: string
-    cities: string[]
-  }[]
-
-  hotels: {
-    id: number,
-    label: string
-  }[]
-
-}
 
 
 export default function Home() {
+  const router = useRouter()
   const checkInRef = useRef(null)
   const checkOutRef = useRef(null)
 
@@ -77,11 +45,16 @@ export default function Home() {
     room: false,
   })
 
-  const [recomendations, setRecomendations] = useState<RecomendationTextResponse[]>([])
-
   const [recomendationTexts, setRecomendationTexts] = useState<RecomendationText | null>()
 
+  const [searchHistory, setSearchHistory] = useState<SearchHistoryLocation[] | []>([])
+
   const totalNight = Math.round((bookingData.checkOut - bookingData.checkIn) / oneDayMili);
+
+  function createQueryFindHotels(){
+    const query = `?search=${bookingData.search}&category_property=${bookingData.category}&check_in=${bookingData.checkIn}&check_out=${bookingData.checkOut}&total_adults=${bookingData.guests.adults}&total_childrens=${bookingData.guests.childrens}&total_rooms=${bookingData.totalRooms}`
+    return query
+  }
 
   useEffect(() => {
 
@@ -129,15 +102,42 @@ export default function Home() {
         }
 
       } catch {
-        setRecomendations([])
+        setRecomendationTexts(null)
       }
 
     }
+
+    const fetchSearchHistory = async () => {
+      const searchHistories = localStorage.getItem('searchHistories')
+      if (!searchHistories) {
+        localStorage.setItem("searchHistories", JSON.stringify([
+          {
+            location: "Bandung",
+            isLocation: true,
+          },
+          {
+            location: "Hotel AmenKila Luxury Hotels",
+            isLocation: false,
+          }
+        ]))
+        return
+      }
+      const data = JSON.parse(searchHistories)
+      setSearchHistory(data)
+    }
+
+
     fetchApi()
+    fetchSearchHistory()
   }, [searchDebounce])
 
+  function handleSubmit(e : React.FormEvent){
+    e.preventDefault()
+    router.push(`hotels?${createQueryFindHotels()}`)
+  }
+
   return (
-    <>
+    <div className="w-full flex flex-col">
       <div className="w-full h-dvh bg-[url(/images/dashboard.png)] bg-no-repeat bg-cover relative">
 
         {/* black nuansa */}
@@ -157,389 +157,91 @@ export default function Home() {
             {/* seaarch bar */}
             <div className="w-[80%] flex flex-col items-center">
               <div className="w-full flex gap-2.5">
-                <div className="h-7 flex items-center self-end gap-4 self bg-(--status-refund) p-2 rounded-lg rounded-b-none">
-                  {
-                    totalNight <= 1 ? <></> : <div className="flex items-center justify-center gap-1 text-sm">
-                      <span className="text-bold text-background">{
-                        (totalNight - 1) + " Hari"
-                      }</span>
-                      <BookingIcons
-                        name="sun"
-                        className="w-4 h-4 text-(--status-wait)"
-                      />
-                    </div>
-                  }
 
+                <SummaryNights totalNight={totalNight} />
 
-                  <div className="flex items-center justify-center gap-1 text-sm">
-                    <span className="text-bold text-background">{
-                      totalNight <= 1 ? "Semalam" : totalNight + " Malam"
-                    }</span>
-                    <BookingIcons
-                      name="moon"
-                      className="w-4 h-4 text-(--status-wait)"
-                    />
-                  </div>
-
-                </div>
-
-                <div className="flex gap-2.5 p-2">
-                  <ButtonSelectDate iconName="check_in" refDate={checkInRef} setValue={setBookingData} value={bookingData.checkIn} isCheckIn={true} />
-                  <ButtonSelectDate iconName="check_out" refDate={checkOutRef} setValue={setBookingData} value={bookingData.checkOut} isCheckIn={false} />
-                  <ButtonSelectTotalGuest setValue={setBookingData} value={bookingData.guests} setShowInput={setShowInputGuestAndRoom} showInput={showInputGuestAndRoom.guest} />
-                  <ButtonSelectTotalRooms setValue={setBookingData} value={bookingData.totalRooms} setShowInput={setShowInputGuestAndRoom} showInput={showInputGuestAndRoom.room} />
-                </div>
-              </div>
-
-              <div className="w-full p-3 flex items-center gap-2.5 rounded-2xl rounded-tl-none bg-background relative">
-                <Image
-                  src={"/icons/ic_search.svg"}
-                  width={30}
-                  height={30}
-                  alt="search"
+                <BookingDate 
+                  checkInRef={checkInRef}
+                  checkOutRef={checkOutRef}
+                  setShowInput={setShowInputGuestAndRoom}
+                  showInput={showInputGuestAndRoom}
+                  setValue={setBookingData}
+                  value={bookingData}
                 />
-                <input
-                  className="w-full min-h-8 outline-none"
-                  placeholder="Cari Hotel Atau Lokasi Hotel Disini!"
-                  type="text"
-                  value={bookingData.search}
-                  onChange={(e) => setBookingData(prev => {
-                    return {
-                      ...prev,
-                      ...{
-                        search: e.target.value
-                      }
-                    }
-                  })}
-                />
-                <div className={`w-full p-1.5 ${recomendationTexts?.locations?.length ? "flex" : "hidden"} flex-col gap-2.5 bg-background absolute top-10 left-0 rounded-b-2xl`}>
-                  {recomendationTexts?.locations.map(location => {
-                    return location.cities.map((city, index) => {
-                      return <button
-                        key={`${city}-recommendation-text-${index}`}
-                        className="w-full p-1.5 text-start cursor-pointer"
-                        onClick={() => {
-                          setBookingData(prev => {
-                            return {
-                              ...prev,
-                              ...{
-                                search: city
-                              }
-                            }
-                          })
-                          setRecomendationTexts(null)
-                        }}
-                      >
-                        {city + ", " + location.province}
-                      </button>
-                    })
-                  })}
-                  {
-                    recomendationTexts?.hotels.map((hotel, index) => {
-                      return <button
-                        key={`${hotel.label}-recommendation-text-${index}`}
-                        className="w-full p-1.5 text-start cursor-pointer"
-                        onClick={() => {
-                          // pindahkan ke halaman detail hotel...
-                          setRecomendationTexts(null)
-                        }}
-                      >
-                        {hotel.label}
-                      </button>
-                    })
-                  }
-                </div>
+                
               </div>
 
-              <div className="flex gap-2.5 p-3">
-                <ButtonCategoryProperty currentCategory={bookingData.category} iconName="" label="Semuanya" name="all" setValue={setBookingData} />
-                <ButtonCategoryProperty currentCategory={bookingData.category} iconName="hotel" label="Hotel" name="hotel" setValue={setBookingData} />
-                <ButtonCategoryProperty currentCategory={bookingData.category} iconName="villa" label="Villa" name="villa" setValue={setBookingData} />
-                <ButtonCategoryProperty currentCategory={bookingData.category} iconName="apartment" label="Apartemen" name="apartment" setValue={setBookingData} />
-              </div>
+              <SearchBar bookingData={bookingData} setBookingData={setBookingData} recomendation={recomendationTexts} setRecommendation={setRecomendationTexts} handleSubmit={handleSubmit} />
+                
+              <CategoryProperty setValue={setBookingData} value={bookingData}  />
 
-              <div className="w-full flex flex-col gap-3 mt-10">
-                <h4 className="font-bold text-background">Riwayat Pencarian</h4>
-                <div className="flex flex-wrap gap-2.5">
-
-                  <div 
-                    className="flex justify-between items-center min-w-60 bg-background p-2 px-3 border-2 border-(--status-refund) rounded-xl"
-                  >
-                    <button
-                      className="w-full text-start"
-                      onClick={() => console.log('insert search...')}
-                    >
-                      Jakarta
-                    </button>
-                    <button
-                      className="cursor-pointer"
-                      type="button"
-                      title="close-history-search"
-                      onClick={() => console.log('close-search')}
-                    >
-                      <ActionIcon
-                        className="w-5 h-5 "
-                        name="close_tight"
-                      />  
-                    </button>
-                  </div>
-
-                </div>
-              </div>
-
+              <HistorySearch setValue={setSearchHistory} value={searchHistory} />
+              
             </div>
 
+          </div>
 
+        </div>
+
+      </div>
+
+      <div className="flex flex-col gap-2.5 p-5">
+        <h2 className="font-bold text-lg">Temukan Hotel Yang Anda Suka</h2>
+        <div className="flex items-center gap-4.5 flex-wrap">
+          <div className="">
+            <div className="w-full">
+              <Image
+                className="rounded-t-lg"
+                width={320}
+                height={10}
+                src={"/images/dashboard.png"}
+                alt="hotel-images-"
+              />
+            </div>
+            <div className="flex flex-col py-2 gap-2.5"> 
+              <h4 className="text-lg font-bold">Hotel AmenKila Luxury</h4>
+              <div className="flex items-center justify-between">
+                <div className="flex gap-1">
+                  <HotelIcons
+                    className="w-5 h-5 text-(--status-wait)"
+                    name="star"
+                  />
+                  <HotelIcons
+                    className="w-5 h-5 text-(--status-wait)"
+                    name="star"
+                  />
+                  <HotelIcons
+                    className="w-5 h-5 text-(--status-wait)"
+                    name="star"
+                  />
+                  <HotelIcons
+                    className="w-5 h-5 text-(--status-wait)"
+                    name="star"
+                  />
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <BookingIcons
+                    className="w-4 h-4 text-(--status-refund)"
+                    name="room"
+                  />
+                  <span className="text-sm text-(--status-refund)">Kamar Terakhir</span>
+                </div>
+              </div>
+
+              <div className="w-full px-2 flex justify-between items-center">
+                <div className="p-1 flex justify-center items-center self-end bg-(--status-refund) rounded-lg">
+                  <span className="text-sm text-background">Diskon 20%</span>
+                </div>
+                <div className="flex flex-col">
+                  <span className="text-sm text-end text-(--status-wait) line-through">Rp. 1.000.000,00</span>
+                  <span className="font-bold text-lg">Rp. 1.000.000,00</span>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
-    </>
+      
+    </div>
   );
-}
-
-
-// component dibawah ini akan dipindah ke dalam folder components
-
-function ButtonSelectDate({
-  iconName,
-  refDate,
-  value,
-  setValue,
-  isCheckIn,
-}: {
-  iconName: string,
-  refDate: RefObject<null>,
-  value: number,
-  setValue: Dispatch<SetStateAction<BookingState>>,
-  isCheckIn: boolean
-}) {
-
-  const handleClickButton = () => {
-    if (refDate.current && (refDate.current as HTMLInputElement).showPicker) {
-      (refDate.current as HTMLInputElement).showPicker()
-    }
-  }
-
-  const months = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"]
-  // const days = [ "Minggu", "Senin", "Selasa", "Rabu", "Kamis", "Jum'at", "Sabut" ]
-
-  const valueDate = new Date(value)
-
-  const labelDate = `${valueDate.getUTCDate()} ${months[valueDate.getUTCMonth()]} ${valueDate.getFullYear()}`
-
-  // value untuk input (tahun-bulan-tanggal) (2026-01-13)
-
-  return <button className="flex items-center gap-1.5 bg-background p-2 border-2 border-(--status-refund) rounded-lg cursor-pointer relative"
-    onClick={handleClickButton}
-  >
-    <BookingIcons
-      name={iconName}
-      className="w-5 h-5 text-(--status-refund)"
-    />
-    <span className="text-sm font-bold opacity-80">{labelDate}</span>
-    <input className="absolute top-0 left-0 -z-10" type="date" id="check_in"
-      ref={refDate}
-      value={valueDate.toISOString().split("T")[0]}
-      onChange={(e) => setValue(prev => {
-        return {
-          ...prev,
-          ...{
-            [isCheckIn ? "checkIn" : "checkOut"]: new Date(e.target.value).getTime(),
-          }
-        }
-      })}
-    />
-  </button>
-}
-
-function ButtonSelectTotalGuest({
-  value,
-  setValue,
-  showInput,
-  setShowInput,
-}: {
-  value: TotalGuests,
-  setValue: Dispatch<SetStateAction<BookingState>>,
-  showInput: boolean,
-  setShowInput: Dispatch<SetStateAction<ShowInputGuestAndRoom>>
-}) {
-  return <div className="w-max h-max relative">
-    <button className="flex items-center gap-1.5 bg-background p-2 border-2 border-(--status-refund) rounded-lg cursor-pointer relative"
-      onClick={() => setShowInput((prev) => {
-        return {
-          ...prev,
-          ...{
-            guest: !showInput,
-            room:false,
-          }
-        }
-      })}
-    >
-      <BookingIcons
-        name="adult"
-        className="w-5 h-5 text-(--status-refund)"
-      />
-      <span
-        className="text-sm font-bold opacity-80"
-      >{value.adults} Dewasa, {value.childrens} Anak - Anak</span>
-    </button>
-
-    <div className={`w-full min-h-3 p-2 ${showInput ? "flex" : "hidden"} flex-col gap-2.5 bg-background border-2 border-(--status-refund) rounded-lg absolute top-12 left-0 z-10`}>
-
-      <div className="flex flex-col gap-1.5">
-        <label htmlFor="adults" className="text-sm">Dewasa</label>
-        <div className="flex justify-center items-center gap-2.5">
-          <div className="p-1 h-7 flex justify-center items-center rounded-lg border-2 border-(--status-refund)">
-            <BookingIcons
-              name="adult"
-              className="w-4 h-4 text-(--status-refund)"
-            />
-          </div>
-          <input type="number" min={1}
-            className="w-full h-7 p-0.5 px-1 border-2 border-(--status-refund) rounded-lg outline-none" id="adults"
-            placeholder="Masukkan Total Orang Dewasa"
-            aria-describedby="Masukkan total orang dewasa, adults, tamu"
-            onChange={(e) => setValue(prev => {
-              return {
-                ...prev,
-                ...{
-                  guests: {
-                    adults: Number(e.target.value) ? Number(e.target.value) : 1,
-                    childrens: value.childrens
-                  }
-                }
-              }
-            })}
-            value={value.adults}
-          />
-        </div>
-      </div>
-
-      <div className="flex flex-col gap-1.5">
-        <label htmlFor="childrens" className="text-sm">Anak - Anak</label>
-        <div className="flex justify-center items-center gap-2.5">
-          <div className="p-1 h-7 flex justify-center items-center rounded-lg border-2 border-(--status-refund)">
-            <BookingIcons
-              name="adult"
-              className="w-4 h-4 text-(--status-refund)"
-            />
-          </div>
-          <input type="number" min={1}
-            className="w-full h-7 p-0.5 px-1 border-2 border-(--status-refund) rounded-lg outline-none" id="childrens"
-            placeholder="Masukkan Total Anak - Anak"
-            aria-describedby="Masukkan total Anak - Anak, childrens, tamu"
-            onChange={(e) => setValue(prev => {
-              return {
-                ...prev, ...{
-                  guests: {
-                    childrens: Number(e.target.value),
-                    adults: value.adults
-                  }
-                }
-              }
-            })}
-            value={value.childrens}
-          />
-        </div>
-      </div>
-
-    </div>
-  </div>
-}
-
-function ButtonSelectTotalRooms({
-  value,
-  setValue,
-  showInput,
-  setShowInput,
-}: {
-  value: number,
-  setValue: Dispatch<SetStateAction<BookingState>>,
-  showInput: boolean,
-  setShowInput: Dispatch<SetStateAction<ShowInputGuestAndRoom>>
-}) {
-  return <div className="w-max h-max relative">
-    <button className="min-w-32 flex items-center gap-1.5 bg-background p-2 border-2 border-(--status-refund) rounded-lg cursor-pointer relative"
-
-      onClick={() => setShowInput(prev => {
-        return {
-          ...prev,
-          ...{
-            room: !showInput,
-            guest:false,
-          }
-        }
-      })}
-
-    >
-      <BookingIcons
-        name="room"
-        className="w-5 h-5 text-(--status-refund)"
-      />
-      <span
-        className="text-sm font-bold opacity-80"
-      >{value} Kamar</span>
-    </button>
-    <div className={`w-full min-h-3 p-2 ${showInput ? "flex" : "hidden"} flex-col gap-2.5 bg-background border-2 border-(--status-refund) rounded-lg absolute top-12 left-0 z-10`}>
-
-      <div className="flex flex-col gap-1.5">
-        <label htmlFor="rooms" className="text-sm">Total Kamar</label>
-        <div className="flex justify-center items-center gap-2.5">
-          <div className="p-1 h-7 flex justify-center items-center rounded-lg border-2 border-(--status-refund)">
-            <BookingIcons
-              name="room"
-              className="w-4 h-4 text-(--status-refund)"
-            />
-          </div>
-          <input type="number" min={0}
-            className="w-full h-7 p-0.5 px-1 border-2 border-(--status-refund) rounded-lg outline-none" id="rooms"
-            placeholder="Masukkan Total Kamar"
-            aria-describedby="Masukkan total kamar, rooms, tamu"
-            onChange={(e) => setValue(prev => {
-              return {
-                ...prev,
-                ...{
-                  totalRooms: Number(e.target.value) ? Number(e.target.value) : 1,
-                }
-              }
-            })}
-            value={value}
-          />
-        </div>
-      </div>
-    </div>
-  </div>
-}
-
-function ButtonCategoryProperty({
-  iconName,
-  name,
-  label,
-  currentCategory,
-  setValue,
-}: {
-  iconName: string,
-  name: string,
-  label: string,
-  currentCategory: string,
-  setValue: Dispatch<SetStateAction<BookingState>>,
-}) {
-
-  const isCurrentCategory = currentCategory == name
-
-  return <button
-    className={`flex items-center gap-1.5 p-2 px-4 ${isCurrentCategory ? "font-bold bg-(--status-refund) text-background" : "bg-background text-(--status-refund)"} rounded-xl cursor-pointer`}
-    onClick={() => setValue(prev => {
-      return {
-        ...prev,
-        ...{
-          category: name
-        }
-      }
-    })}
-  >
-    {iconName == "" ? <></> : <HotelCategoryIcon className={`w-6 h-6 ${isCurrentCategory ? "text-background" : "text-(--status-refund)"}`} name={iconName} />}
-    <span>{label}</span>
-  </button>
-
 }
