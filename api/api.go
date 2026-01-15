@@ -8,6 +8,7 @@ import (
 	admin_management_hotel "bersi.bermalam.id/api/admin/management-hotels"
 	admin_management_rooms "bersi.bermalam.id/api/admin/management-hotels/management-rooms"
 	"bersi.bermalam.id/api/auth"
+	guest_faqs "bersi.bermalam.id/api/guest/faqs"
 	guest "bersi.bermalam.id/api/guest/hotels"
 	guest_transactions "bersi.bermalam.id/api/guest/transactions"
 	"github.com/gin-gonic/gin"
@@ -79,6 +80,8 @@ func InitiliazeApi(g *gin.Engine) {
 
 	g.GET("/transactions", guest_transactions.HistoryTransactions)
 	g.GET("/transactions/:id", guest_transactions.DetailTransaction)
+
+	g.GET("/faqs", guest_faqs.GetFAQS)
 
 	g.GET("/byte-to-string", func(c *gin.Context) {
 
