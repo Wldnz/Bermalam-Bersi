@@ -2,7 +2,7 @@
 import { BookingState, RecomendationText, RecomendationTextResponse, SearchHistoryLocation, ShowInputGuestAndRoom } from "@/components/FindHotel/models";
 import Navigation from "@/components/Navigation";
 import Api from "@/utils/Api";
-import { useEffect, useRef, useState } from "react";
+import { Dispatch, SetStateAction, useEffect, useRef, useState } from "react";
 import { useDebounce } from "use-debounce";
 import SummaryNights from "@/components/FindHotel/SummaryNight";
 import SearchBar from "@/components/FindHotel/SearchBar";
@@ -13,8 +13,13 @@ import { useRouter } from "next/navigation";
 import Image from "next/image";
 import BookingIcons from "@/components/Icons/Booking";
 import HotelIcons from "@/components/Icons/Hotel";
+import ActionIcon from "@/components/Icons/Action";
+import Link from "next/link";
 
-
+interface FAQS {
+  question: string
+  answer: string
+}
 
 
 
@@ -45,11 +50,15 @@ export default function Home() {
     room: false,
   })
 
+  const [faqs, setFaqs] = useState<FAQS[] | []>([])
+
   const [recomendationTexts, setRecomendationTexts] = useState<RecomendationText | null>()
 
   const [searchHistory, setSearchHistory] = useState<SearchHistoryLocation[] | []>([])
 
   const totalNight = Math.round((bookingData.checkOut - bookingData.checkIn) / oneDayMili);
+
+  const [currentTabMenu, setcurrentTabMenu] = useState<"helper" | "faqs" | "join" | string>("helper")
 
   function createQueryFindHotels() {
     const query = `?search=${bookingData.search}&category_property=${bookingData.category}&check_in=${bookingData.checkIn}&check_out=${bookingData.checkOut}&total_adults=${bookingData.guests.adults}&total_childrens=${bookingData.guests.childrens}&total_rooms=${bookingData.totalRooms}`
@@ -58,7 +67,9 @@ export default function Home() {
 
   useEffect(() => {
 
-    const fetchApi = async () => {
+    const api = Api()
+
+    const fetchApiRecommendation = async () => {
 
       if (searchDebounce.length < 3 || searchDebounce.trim() === "") {
         setRecomendationTexts(null)
@@ -66,7 +77,7 @@ export default function Home() {
       }
 
       try {
-        const { status, data } = await Api().get(`/hotel-recomendation-name?search=${searchDebounce}`)
+        const { status, data } = await api.get(`/hotel-recomendation-name?search=${searchDebounce}`)
 
         // recomendations
 
@@ -126,9 +137,21 @@ export default function Home() {
       setSearchHistory(data)
     }
 
+    const fetchApiFaqs = async () => {
+      try {
+        const { data, status } = await api.get('/faqs');
 
-    fetchApi()
+        if (status == 200) setFaqs(data.data)
+
+      } catch {
+        setFaqs([])
+      }
+    }
+
+
+    fetchApiRecommendation()
     fetchSearchHistory()
+    fetchApiFaqs()
   }, [searchDebounce])
 
   function handleSubmit(e: React.FormEvent) {
@@ -137,7 +160,7 @@ export default function Home() {
   }
 
   return (
-    <div className="w-full flex flex-col gap-2.5">
+    <div className="w-full flex flex-col gap-10">
       <div className="w-full h-dvh bg-[url(/images/dashboard.png)] bg-no-repeat bg-cover relative">
 
         {/* black nuansa */}
@@ -185,8 +208,8 @@ export default function Home() {
 
       </div>
 
-      <div className="flex flex-col gap-2.5 p-2 px-5">
-        <h2 className="font-bold text-xl">Temukan Hotel Yang Anda Suka</h2>
+      <div className="flex flex-col gap-5 p-2 px-5">
+        <h2 className="font-bold text-2xl">Temukan Hotel Yang Anda Suka</h2>
         <div className="flex items-center gap-7 flex-wrap">
           <HotelCard />
           <HotelCard />
@@ -196,7 +219,7 @@ export default function Home() {
 
       <div className="flex flex-col gap-10  p-5 mt-10">
         <div className="flex flex-col justify-center items-center text-foreground">
-          <h2 className="font-bold text-3xl ">Mau Liburan Tapi Gak Tau Mau Kemana?</h2>
+          <h2 className="font-bold text-3xl text-(--status-refund)">Mau Liburan Tapi Gak Tau Mau Kemana?</h2>
           <p className="text-xl">Tenang Aja, Kami sudah membuatkan rekomendasi yang mungkin cocok untuk kamu kunjungi ya!</p>
         </div>
 
@@ -204,10 +227,6 @@ export default function Home() {
           <h2 className="text-xl font-bold">DESTINASI POPULER PADA BALI</h2>
 
           <div className="flex gap-3.5">
-            <PopulerDestinationCard />
-            <PopulerDestinationCard />
-            <PopulerDestinationCard />
-            <PopulerDestinationCard />
             <PopulerDestinationCard />
 
           </div>
@@ -217,11 +236,14 @@ export default function Home() {
 
       <div className="flex flex-col gap-10 p-12 mt-10">
         <div className="flex flex-col justify-center items-center gap-1.5 text-foreground">
-          <h2 className="font-bold text-3xl ">Bingung? Mau Cari Tempat Bermalam</h2>
+          <h2 className="font-bold text-3xl text-(--status-refund)">Bingung? Mau Cari Tempat Bermalam</h2>
           <p className="text-xl">Tenang Aja, Kami sudah menyiapkan map yang dapat membantu kamu dalam mencari tempat bermalam dan wisata disekitarnya!</p>
         </div>
 
-        <div className="w-full h-200 bg-gray-300 rounded-lg"></div>
+        {/* <div className="w-full h-200 bg-gray-300 rounded-lg"></div> */}
+        <div className="w-full h-200 bg-gray-300 rounded-lg">
+          <iframe className="w-full h-full" src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d7932.008926381757!2d106.70720173978117!3d-6.263141042761471!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x2e69fa8af9314375%3A0x5e51c87ae2aadd89!2sVilla%20Bintaro%20Regency!5e0!3m2!1sid!2sid!4v1768453049354!5m2!1sid!2sid" width="600" height="450"></iframe>
+        </div>
 
         <div className="flex flex-col items-center gap-6 text-foreground">
           <h2 className="font-bold text-3xl">Baca Yuk Biar Tahu</h2>
@@ -256,20 +278,91 @@ export default function Home() {
 
       </div>
 
-      <div className="w-full flex gap-2.5 p-10">
+      <div className="w-full flex gap-2.5 p-20">
         <div className="flex flex-col gap-2.5">
-          <div className="w-50 h-30 bg-gray-200"></div>
-          <div className="w-50 h-30 bg-gray-200"></div>
-          <div className="w-50 h-30 bg-gray-200"></div>
+          <MenuContainerButton
+            currentTabMenu={currentTabMenu}
+            setMenuTab={setcurrentTabMenu}
+            label="Ada Masalah?"
+            name="helper"
+          />
+          <MenuContainerButton
+            currentTabMenu={currentTabMenu}
+            setMenuTab={setcurrentTabMenu}
+            label="Ada Pertanyaan?"
+            name="faqs"
+          />
+          <MenuContainerButton
+            currentTabMenu={currentTabMenu}
+            setMenuTab={setcurrentTabMenu}
+            label="Bergabung Dengan Kami"
+            name="join"
+          />
+
         </div>
-        <div className="w-full h-120 bg-gray-200"></div>
+
+        <MenuContainer currentTab={currentTabMenu} faqs={faqs} />
+
       </div>
-
-
       {/* footer */}
+      <footer className="w-full flex flex-col border-t-2 border-(--status-refund)">
 
-      <div className="w-full h-40 bg-gray-300"></div>
+        <div className="flex justify-between gap-4 p-3 py-5">
+          <div className="flex flex-col gap-2.5">
+            <div className="flex items-center gap-2.5">
+              <Image
+                width={40}
+                height={40}
+                src={"/icons/bermalam.svg"}
+                alt="bermalam-svg"
+              />
+              <h4 className="font-bold text-xl">Bermalam</h4>
+            </div>
+            <q>Karena dimanapun kamu berada, <br />kamu pasti membutuhkan tempat untuk bermalam</q>
+          </div>
 
+          <div className="flex flex-col gap-2.5">
+            <h4 className="font-bold">Halaman Yang Kamu Butuhkan</h4>
+            <div className="flex flex-col gap-1.5">
+              <Link href={"/"}>Halaman Utama </Link>
+              <Link href={"/"}>Hotel - Hotel</Link>
+              <Link href={"/"}>Kupon & Promo</Link>
+              <Link href={"/"}>Butuh Bantuan Dan Dukungan</Link>
+            </div>
+          </div>
+
+          <div className="flex flex-col gap-2.5">
+            <h4 className="font-bold">Kamu Mungkin Tertarik</h4>
+            <div className="flex flex-col gap-1.5">
+              <Link href={"/"}>Bermalam`s Partner</Link>
+              <Link href={"/"}>Saya Ingin Mendaftarkan Properti</Link>
+              <Link href={"/"}>Syarat Dan Ketentuan</Link>
+            </div>
+          </div>
+
+          <div className="flex flex-col gap-2.5">
+            <h4 className="font-bold">Temukan Kami Pada</h4>
+            <div className="flex flex-col gap-1.5">
+              <Link href={"/"}>Youtube</Link>
+              <Link href={"/"}>Tiktok</Link>
+              <Link href={"/"}>Instragam</Link>
+            </div>
+          </div>
+
+          <div className="flex flex-col gap-2.5">
+            <h4 className="font-bold">Kontak Kami</h4>
+            <div className="flex flex-col gap-1.5">
+              <Link href={"/"}>+62 82198291</Link>
+              <Link href={"/"}>0800 - 1234 - 5678</Link>
+              <Link href={"/"}>support@bermalam.id</Link>
+            </div>
+          </div>
+        </div>
+
+        <p className="w-full text-center p-2">&#169; Bermalam All Right Reserved 2026</p>
+
+
+      </footer>
     </div>
   );
 }
@@ -334,22 +427,166 @@ function HotelCard() {
 }
 
 function PopulerDestinationCard() {
-  return <div className="group w-60 h-80 hover:w-180 relative">
+
+  const populerDestination = [
+    {
+      name : "Pantai Kuta",
+      description : "Pantai kut adalah tempat wisata yng cocok untuk kamu yang ingin surfing dan lain lain-lainya",
+      location : "Pantai Barat",
+      image_url : "/images/populer_destination/pantai_kuta.jpg"
+    },
+    {
+      name : "Pantai Kuta",
+      description : "Pantai kut adalah tempat wisata yng cocok untuk kamu yang ingin surfing dan lain lain-lainya",
+      location : "Pantai Barat",
+      image_url : "/images/populer_destination/pantai_kuta.jpg"
+    },
+    {
+      name : "Tanah Lot",
+      description : "Tanah Lot adalah tempat wisata yng cocok untuk kamu yang ingin surfing dan lain lain-lainya yang cihuy banget...",
+      location : "Pantai Barat",
+      image_url : "/images/populer_destination/tanah_lot_bali.jpg"
+    },
+    {
+      name : "Tanjung Benoa",
+      description : "Tanjung benoa adalah pusat watersport yangs seru pada bali, dengan ombak yang tenang, tempat ini cocok untuk berbagai aktivitas air yang menantang adrenalin dan sangat cocok untuk pemula.",
+      location : "Pantai Barat",
+      image_url : "/images/populer_destination/tanjung_benoa.webp"
+    },
+    {
+      name : "Ubud",
+      description : "Mau lihat kera liar di habitat aslinya? Ubud Monkey Forest ini adalah tempatnya!",
+      location : "Pantai Timur",
+      image_url : "/images/populer_destination/ubud.webp"
+    },
+    {
+      name : "Taman Nasional Bali Barat",
+      description : "Taman Nasional Bali Barat adalah tempat yang sangat amat cocok untuk kamu kunjungi!",
+      location : "Pantai Timur",
+      image_url : "/images/populer_destination/taman_nasional_barat.webp"
+    }
+
+  ]
+
+
+  return populerDestination.map((destination, index) => {
+    return <div className="group w-60 h-100 hover:w-180 relative"
+    key={`destination-index-${index}`}>
     <Image
       className="w-full h-full "
       width={400}
       height={10}
-      src={"/images/dashboard.png"}
-      alt="image"
+      src={destination.image_url}
+      alt={`destination-image-${destination.name}`}
     />
     <div className="w-full h-full bg-foreground opacity-60 absolute top-0 left-0"></div>
     <div className="flex flex-col gap-2.5 text-background absolute bottom-3 left-3">
-      <h2 className="font-bold text-2xl text-background group-hover:text-(--status-wait)">Pantai Kuta</h2>
+      <h2 className="font-bold text-2xl text-background group-hover:text-(--status-wait)">{destination.name}</h2>
       <div className="hidden flex-col gap-2.5 group-hover:flex">
-        <p className="text-lg">Taman Nasional Bali Barat memiliki keanekaragaman hayati pantai yang masih alami, dan laut jernih yang menjadi rumah bagi terumbu karang indah</p>
+        <p className="text-lg">{destination.description}</p>
         <button className="w-max text-lg font-bold border-2 border-background p-2.5 rounded-lg cursor-pointer outline-none"
         >Lihat Tempat Bermalam Disekitar</button>
       </div>
     </div>
   </div>
+  })
+}
+
+function FaqCard({
+  question,
+  answer
+}: {
+  question: string,
+  answer: string,
+}) {
+  return <details className="group">
+    <summary className="flex justify-between items-center bg-(--status-refund) p-3 rounded-lg group-open:rounded-b-none">
+      <p className="font-bold text-background">{question}</p>
+      <ActionIcon
+        className="w-5 h-5 group-open:hidden text-background"
+        name="arrow-up"
+      />
+      <ActionIcon
+        className="w-5 h-5 hidden group-open:block text-background"
+        name="close_tight"
+      />
+    </summary>
+    <p className="p-2 bg-(--b3) rounded-b-lg">{answer}</p>
+  </details>
+}
+
+function FaqContainer({
+  faqs
+}: {
+  faqs: FAQS[] | []
+}) {
+  return <div className="w-full flex flex-col border-2 border-(--status-refund) rounded-lg p-3">
+    <h2 className="text-2xl font-bold text-(--status-refund)">Kamu memiliki banyak Pertanyaan?</h2>
+    <p>Coba lihat pertanyaan - pertanyaan dibawah ini, siapa tau ngejawab!</p>
+    <div className="flex flex-col gap-2.5 mt-3">
+      {faqs.map(faq => {
+        return <FaqCard answer={faq.answer} question={faq.question} key={`${faq.question}-${faq.answer}`} />
+      })}
+    </div>
+    <div className="flex flex-col gap-2.5 mt-2">
+      <button className="p-3 py-3 bg-(--status-refund) font-bold text-background rounded-sm cursor-pointer">Masih Memiliki Pertanyaan?</button>
+    </div>
+  </div>
+}
+
+function NeedHelpContainer() {
+  return <div className="w-full h-max flex flex-col gap-2 border-2 border-(--status-refund) rounded-lg p-3">
+    <h2 className="text-2xl font-bold text-(--status-refund)">Kamu Sedang Mengalami Kendala?</h2>
+    <div className="flex flex-col gap-2.5">
+      <p>Tenang Aja!, kami siap membantu anda dalam menyelesaikan masalah - masalah yang sedang dihadapi</p>
+      <p>Segera laporkan masalah anda kepada kami! Kami siap 24/7!</p>
+    </div>
+    <button className="w-max p-2.5 font-bold text-lg text-(--status-refund) border-2 border-(--status-refund) rounded-lg">Laporkan Masalah Kamu</button>
+  </div>
+}
+
+function JoinWithUsContainer() {
+  return <div className="w-full h-max flex flex-col gap-2 border-2 border-(--status-refund) rounded-lg p-3">
+    <h2 className="text-2xl font-bold text-(--status-refund)">Kamu Mau Tempat Bermalam Kamu Terlihat Disini?</h2>
+    <div className="flex flex-col gap-2.5">
+      <p>Bisa bangettt nih kalo tempat bermalam kamu terlihat disini, <br />Dengan bergabung bersama kami maka kamu bisa menikmati banyak keuntungan untuk tempat bermalam kamu lho!</p>
+    </div>
+    <button className="p-3 py-3 bg-(--status-refund) font-bold text-background rounded-sm cursor-pointer"
+    >Mau Dong Bergabung</button>
+  </div>
+}
+
+function MenuContainer({
+  currentTab,
+  faqs,
+}: {
+  currentTab: string,
+  faqs: FAQS[]
+}) {
+  switch (currentTab) {
+    case "helper":
+      return <NeedHelpContainer />
+    case "faqs":
+      return <FaqContainer faqs={faqs} />
+    case "join":
+      return <JoinWithUsContainer />
+  }
+}
+
+function MenuContainerButton({
+  currentTabMenu,
+  label,
+  name,
+  setMenuTab
+}: {
+  currentTabMenu: string,
+  name: string,
+  label: string,
+  setMenuTab: Dispatch<SetStateAction<string>>
+}) {
+  return <button className={`w-50 h-20 p-3 flex justify-center items-center border-2 ${currentTabMenu == name ? "bg-(--status-refund) text-background" : "bg-background text-(--status-refund)"} border-2 border-(--status-refund) rounded-lg`}
+    onClick={() => setMenuTab(name)}
+  >
+    <h2 className="font-bold text-xl text-start">{label}</h2>
+  </button>
 }

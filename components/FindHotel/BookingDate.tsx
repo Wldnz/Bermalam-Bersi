@@ -71,6 +71,7 @@ function ButtonSelectDate({
         const currentTime = new Date().getTime()
         const currentValue = new Date(e.target.value).getTime()
         if (isCheckIn && currentValue < currentTime) return alert('Eits... Kamu Tidak Bisa Check-In Di Kemaren Kemaren Hari ya!')
+        if (isCheckIn && currentValue >= value.checkOut) return alert('Pastikan waktu check-in di bawah waktu check-out!')
         if (!isCheckIn && currentValue > ((60 * 60 * 24 * 365 * 1000) + currentTime)) return alert('Eits.... Kamu Tidak Memesan Kamar Lebih Dari Setahun!')
         if (!isCheckIn && currentValue < value.checkIn) return alert('Eits.... Kamu Tidak Bisa Memilih Check-Out Dibawah Check-In!')
         setValue(prev => {
