@@ -2,7 +2,7 @@
 import { BookingState, RecomendationText, RecomendationTextResponse, SearchHistoryLocation, ShowInputGuestAndRoom } from "@/components/FindHotel/models";
 import Navigation from "@/components/Navigation";
 import Api from "@/utils/Api";
-import { Dispatch, SetStateAction, useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useDebounce } from "use-debounce";
 import SummaryNights from "@/components/FindHotel/SummaryNight";
 import SearchBar from "@/components/FindHotel/SearchBar";
@@ -12,13 +12,11 @@ import BookingDate from "@/components/FindHotel/BookingDate";
 import { useRouter } from "next/navigation";
 import BookingIcons from "@/components/Icons/Booking";
 import HotelIcons from "@/components/Icons/Hotel";
-import ActionIcon from "@/components/Icons/Action";
 import Image from "next/image";
+import RecommendationPopulerDestination from "@/components/FindHotel/RecommendationDestination";
+import FastMenuContainer from "@/components/FindHotel/FastMenuContainer";
 
-interface FAQS {
-  question: string
-  answer: string
-}
+
 
 
 
@@ -49,15 +47,12 @@ export default function Home() {
     room: false,
   })
 
-  const [faqs, setFaqs] = useState<FAQS[] | []>([])
-
   const [recomendationTexts, setRecomendationTexts] = useState<RecomendationText | null>()
 
   const [searchHistory, setSearchHistory] = useState<SearchHistoryLocation[] | []>([])
 
   const totalNight = Math.round((bookingData.checkOut - bookingData.checkIn) / oneDayMili);
 
-  const [currentTabMenu, setcurrentTabMenu] = useState<"helper" | "faqs" | "join" | string>("helper")
 
   function createQueryFindHotels() {
     const query = `search=${bookingData.search}&category_property=${bookingData.category}&check_in=${bookingData.checkIn}&check_out=${bookingData.checkOut}&total_adults=${bookingData.guests.adults}&total_childrens=${bookingData.guests.childrens}&total_rooms=${bookingData.totalRooms}`
@@ -136,21 +131,9 @@ export default function Home() {
       setSearchHistory(data)
     }
 
-    const fetchApiFaqs = async () => {
-      try {
-        const { data, status } = await api.get('/faqs');
-
-        if (status == 200) setFaqs(data.data)
-
-      } catch {
-        setFaqs([])
-      }
-    }
-
-
+   
     fetchApiRecommendation()
     fetchSearchHistory()
-    fetchApiFaqs()
   }, [searchDebounce])
 
   function handleSubmit(e: React.FormEvent) {
@@ -216,22 +199,7 @@ export default function Home() {
         </div>
       </div>
 
-      <div className="flex flex-col gap-10  p-5 mt-10">
-        <div className="flex flex-col justify-center items-center text-foreground">
-          <h2 className="font-bold text-3xl text-(--status-refund)">Mau Liburan Tapi Gak Tau Mau Kemana?</h2>
-          <p className="text-xl">Tenang Aja, Kami sudah membuatkan rekomendasi yang mungkin cocok untuk kamu kunjungi ya!</p>
-        </div>
-
-        <div className="flex flex-col gap-5">
-          <h2 className="text-xl font-bold">DESTINASI POPULER PADA BALI</h2>
-
-          <div className="flex gap-3.5">
-            <PopulerDestinationCard />
-
-          </div>
-
-        </div>
-      </div>
+     <RecommendationPopulerDestination/>
 
       <div className="flex flex-col gap-10 p-12 mt-10">
         <div className="flex flex-col justify-center items-center gap-1.5 text-foreground">
@@ -277,32 +245,8 @@ export default function Home() {
 
       </div>
 
-      <div className="w-full flex gap-2.5 p-20">
-        <div className="flex flex-col gap-2.5">
-          <MenuContainerButton
-            currentTabMenu={currentTabMenu}
-            setMenuTab={setcurrentTabMenu}
-            label="Ada Masalah?"
-            name="helper"
-          />
-          <MenuContainerButton
-            currentTabMenu={currentTabMenu}
-            setMenuTab={setcurrentTabMenu}
-            label="Ada Pertanyaan?"
-            name="faqs"
-          />
-          <MenuContainerButton
-            currentTabMenu={currentTabMenu}
-            setMenuTab={setcurrentTabMenu}
-            label="Bergabung Dengan Kami"
-            name="join"
-          />
+      <FastMenuContainer/>
 
-        </div>
-
-        <MenuContainer currentTab={currentTabMenu} faqs={faqs} />
-
-      </div>
     </div>
   );
 }
@@ -366,167 +310,9 @@ function HotelCard() {
   </div>
 }
 
-function PopulerDestinationCard() {
-
-  const populerDestination = [
-    {
-      name : "Pantai Kuta",
-      description : "Pantai kut adalah tempat wisata yng cocok untuk kamu yang ingin surfing dan lain lain-lainya",
-      location : "Pantai Barat",
-      image_url : "/images/populer_destination/pantai_kuta.jpg"
-    },
-    {
-      name : "Pantai Kuta",
-      description : "Pantai kut adalah tempat wisata yng cocok untuk kamu yang ingin surfing dan lain lain-lainya",
-      location : "Pantai Barat",
-      image_url : "/images/populer_destination/pantai_kuta.jpg"
-    },
-    {
-      name : "Tanah Lot",
-      description : "Tanah Lot adalah tempat wisata yng cocok untuk kamu yang ingin surfing dan lain lain-lainya yang cihuy banget...",
-      location : "Pantai Barat",
-      image_url : "/images/populer_destination/tanah_lot_bali.jpg"
-    },
-    {
-      name : "Tanjung Benoa",
-      description : "Tanjung benoa adalah pusat watersport yangs seru pada bali, dengan ombak yang tenang, tempat ini cocok untuk berbagai aktivitas air yang menantang adrenalin dan sangat cocok untuk pemula.",
-      location : "Pantai Barat",
-      image_url : "/images/populer_destination/tanjung_benoa.webp"
-    },
-    {
-      name : "Ubud",
-      description : "Mau lihat kera liar di habitat aslinya? Ubud Monkey Forest ini adalah tempatnya!",
-      location : "Pantai Timur",
-      image_url : "/images/populer_destination/ubud.webp"
-    },
-    {
-      name : "Taman Nasional Bali Barat",
-      description : "Taman Nasional Bali Barat adalah tempat yang sangat amat cocok untuk kamu kunjungi!",
-      location : "Pantai Timur",
-      image_url : "/images/populer_destination/taman_nasional_barat.webp"
-    }
-
-  ]
 
 
-  return populerDestination.map((destination, index) => {
-    return <div className="group w-60 h-100 hover:w-180 relative"
-    key={`destination-index-${index}`}>
-    <Image
-      className="w-full h-full "
-      width={400}
-      height={10}
-      src={destination.image_url}
-      alt={`destination-image-${destination.name}`}
-    />
-    <div className="w-full h-full bg-foreground opacity-60 absolute top-0 left-0"></div>
-    <div className="flex flex-col gap-2.5 text-background absolute bottom-3 left-3">
-      <h2 className="font-bold text-2xl text-background group-hover:text-(--status-wait)">{destination.name}</h2>
-      <div className="hidden flex-col gap-2.5 group-hover:flex">
-        <p className="text-lg">{destination.description}</p>
-        <button className="w-max text-lg font-bold border-2 border-background p-2.5 rounded-lg cursor-pointer outline-none"
-        >Lihat Tempat Bermalam Disekitar</button>
-      </div>
-    </div>
-  </div>
-  })
-}
 
-function FaqCard({
-  question,
-  answer
-}: {
-  question: string,
-  answer: string,
-}) {
-  return <details className="group">
-    <summary className="flex justify-between items-center bg-(--status-refund) p-3 rounded-lg group-open:rounded-b-none">
-      <p className="font-bold text-background">{question}</p>
-      <ActionIcon
-        className="w-5 h-5 group-open:hidden text-background"
-        name="arrow-up"
-      />
-      <ActionIcon
-        className="w-5 h-5 hidden group-open:block text-background"
-        name="close_tight"
-      />
-    </summary>
-    <p className="p-2 bg-(--b3) rounded-b-lg">{answer}</p>
-  </details>
-}
 
-function FaqContainer({
-  faqs
-}: {
-  faqs: FAQS[] | []
-}) {
-  return <div className="w-full flex flex-col border-2 border-(--status-refund) rounded-lg p-3">
-    <h2 className="text-2xl font-bold text-(--status-refund)">Kamu memiliki banyak Pertanyaan?</h2>
-    <p>Coba lihat pertanyaan - pertanyaan dibawah ini, siapa tau ngejawab!</p>
-    <div className="flex flex-col gap-2.5 mt-3">
-      {faqs.map(faq => {
-        return <FaqCard answer={faq.answer} question={faq.question} key={`${faq.question}-${faq.answer}`} />
-      })}
-    </div>
-    <div className="flex flex-col gap-2.5 mt-2">
-      <button className="p-3 py-3 bg-(--status-refund) font-bold text-background rounded-sm cursor-pointer">Masih Memiliki Pertanyaan?</button>
-    </div>
-  </div>
-}
 
-function NeedHelpContainer() {
-  return <div className="w-full h-max flex flex-col gap-2 border-2 border-(--status-refund) rounded-lg p-3">
-    <h2 className="text-2xl font-bold text-(--status-refund)">Kamu Sedang Mengalami Kendala?</h2>
-    <div className="flex flex-col gap-2.5">
-      <p>Tenang Aja!, kami siap membantu anda dalam menyelesaikan masalah - masalah yang sedang dihadapi</p>
-      <p>Segera laporkan masalah anda kepada kami! Kami siap 24/7!</p>
-    </div>
-    <button className="w-max p-2.5 font-bold text-lg text-(--status-refund) border-2 border-(--status-refund) rounded-lg">Laporkan Masalah Kamu</button>
-  </div>
-}
 
-function JoinWithUsContainer() {
-  return <div className="w-full h-max flex flex-col gap-2 border-2 border-(--status-refund) rounded-lg p-3">
-    <h2 className="text-2xl font-bold text-(--status-refund)">Kamu Mau Tempat Bermalam Kamu Terlihat Disini?</h2>
-    <div className="flex flex-col gap-2.5">
-      <p>Bisa bangettt nih kalo tempat bermalam kamu terlihat disini, <br />Dengan bergabung bersama kami maka kamu bisa menikmati banyak keuntungan untuk tempat bermalam kamu lho!</p>
-    </div>
-    <button className="p-3 py-3 bg-(--status-refund) font-bold text-background rounded-sm cursor-pointer"
-    >Mau Dong Bergabung</button>
-  </div>
-}
-
-function MenuContainer({
-  currentTab,
-  faqs,
-}: {
-  currentTab: string,
-  faqs: FAQS[]
-}) {
-  switch (currentTab) {
-    case "helper":
-      return <NeedHelpContainer />
-    case "faqs":
-      return <FaqContainer faqs={faqs} />
-    case "join":
-      return <JoinWithUsContainer />
-  }
-}
-
-function MenuContainerButton({
-  currentTabMenu,
-  label,
-  name,
-  setMenuTab
-}: {
-  currentTabMenu: string,
-  name: string,
-  label: string,
-  setMenuTab: Dispatch<SetStateAction<string>>
-}) {
-  return <button className={`w-50 h-20 p-3 flex justify-center items-center border-2 ${currentTabMenu == name ? "bg-(--status-refund) text-background" : "bg-background text-(--status-refund)"} border-2 border-(--status-refund) rounded-lg`}
-    onClick={() => setMenuTab(name)}
-  >
-    <h2 className="font-bold text-xl text-start">{label}</h2>
-  </button>
-}
