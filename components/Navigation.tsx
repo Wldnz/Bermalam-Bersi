@@ -34,7 +34,11 @@ const navigationLink = [
     },
 ]
 
-export default function Navigation() {
+export default function Navigation({
+    border = false
+} : {
+    border: boolean
+}) {
 
     const pathName = usePathname()
 
@@ -44,7 +48,7 @@ export default function Navigation() {
         
         {showNavigation ? <SideNaviagtionButtonHidden/> : <SideNavigationButton iconName="bermalam" setshow={setShowNavigation} value={true}  />}
 
-        {!showNavigation ? <></> : <div className="w-full max-w-225 h-11 p-2.5 px-5 flex justify-between items-center gap-2.5 rounded-2xl bg-background">
+        {!showNavigation ? <></> : <div className={`w-full max-w-225 h-11 p-2.5 px-5 flex justify-between items-center gap-2.5 rounded-2xl bg-white ${border? "border-2 border-(--status-refund)" : ""}`}>
             <Link
                 href={"/"}
                 className="flex h-full justify-center items-center gap-2"
