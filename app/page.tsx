@@ -1,15 +1,12 @@
 "use client"
-import { BookingState, RecomendationText, RecomendationTextResponse, SearchHistoryLocation, ShowInputGuestAndRoom } from "@/components/FindHotel/models";
+import { BookingState, SearchHistoryLocation, ShowInputGuestAndRoom } from "@/components/FindHotel/models";
 import Navigation from "@/components/Navigation";
-import Api from "@/utils/Api";
-import { useEffect, useRef, useState } from "react";
-import { useDebounce } from "use-debounce";
+import { useRef, useState } from "react";
 import SummaryNights from "@/components/FindHotel/SummaryNight";
 import SearchBar from "@/components/FindHotel/SearchBar";
 import HistorySearch from "@/components/FindHotel/HistorySearch";
 import CategoryProperty from "@/components/FindHotel/CategoryProperty";
 import BookingDate from "@/components/FindHotel/BookingDate";
-import { useRouter } from "next/navigation";
 import BookingIcons from "@/components/Icons/Booking";
 import HotelIcons from "@/components/Icons/Hotel";
 import Image from "next/image";
@@ -21,7 +18,6 @@ import FastMenuContainer from "@/components/FindHotel/FastMenuContainer";
 
 
 export default function Home() {
-  const router = useRouter()
   const checkInRef = useRef(null)
   const checkOutRef = useRef(null)
 
@@ -40,106 +36,48 @@ export default function Home() {
     search: "",
   })
 
-  const [searchDebounce] = useDebounce(bookingData.search, 500)
+  
 
   const [showInputGuestAndRoom, setShowInputGuestAndRoom] = useState<ShowInputGuestAndRoom>({
     guest: false,
     room: false,
   })
 
-  const [recomendationTexts, setRecomendationTexts] = useState<RecomendationText | null>()
 
   const [searchHistory, setSearchHistory] = useState<SearchHistoryLocation[] | []>([])
 
   const totalNight = Math.round((bookingData.checkOut - bookingData.checkIn) / oneDayMili);
 
 
-  function createQueryFindHotels() {
-    const query = `search=${bookingData.search}&category_property=${bookingData.category}&check_in=${bookingData.checkIn}&check_out=${bookingData.checkOut}&total_adults=${bookingData.guests.adults}&total_childrens=${bookingData.guests.childrens}&total_rooms=${bookingData.totalRooms}`
-    return query
-  }
 
-  useEffect(() => {
 
-    const api = Api()
+  // useEffect(() => {
 
-    const fetchApiRecommendation = async () => {
+  //   const api = Api()
 
-      if (searchDebounce.length < 3 || searchDebounce.trim() === "") {
-        setRecomendationTexts(null)
-        return
-      }
+  //   const fetchSearchHistory = async () => {
+  //     const searchHistories = localStorage.getItem('searchHistories')
+  //     if (!searchHistories) {
+  //       localStorage.setItem("searchHistories", JSON.stringify([
+  //         {
+  //           location: "Bandung",
+  //           isLocation: true,
+  //         },
+  //         {
+  //           location: "Hotel AmenKila Luxury Hotels",
+  //           isLocation: false,
+  //         }
+  //       ]))
+  //       return
+  //     }
+  //     const data = JSON.parse(searchHistories)
+  //     setSearchHistory(data)
+  //   }
 
-      try {
-        const { status, data } = await api.get(`/hotel-recomendation-name?search=${searchDebounce}`)
+  //   fetchSearchHistory()
+  // }, [])
 
-        // recomendations
-
-        if (status == 200 && (data.data as RecomendationTextResponse[]).length > 0) {
-          const locationMaps = new Map()
-
-          const datas = (data.data as RecomendationTextResponse[]);
-
-          datas.forEach((recomendation) => {
-
-            if (!locationMaps.has(recomendation.province)) {
-              locationMaps.set(recomendation.province, new Set())
-            }
-
-            locationMaps.get(recomendation.province).add(recomendation.city)
-          })
-
-          const locations = Array.from(locationMaps.entries()).map(location => ({
-            province: location[0] as string,
-            cities: Array.from(location[1]) as string[],
-          }))
-
-          const hotels = datas.map(data => ({
-            id: data.hotel_id,
-            label: data.label,
-          }))
-
-          setRecomendationTexts({
-            hotels: hotels,
-            locations: locations,
-          })
-
-        }
-
-      } catch {
-        setRecomendationTexts(null)
-      }
-
-    }
-
-    const fetchSearchHistory = async () => {
-      const searchHistories = localStorage.getItem('searchHistories')
-      if (!searchHistories) {
-        localStorage.setItem("searchHistories", JSON.stringify([
-          {
-            location: "Bandung",
-            isLocation: true,
-          },
-          {
-            location: "Hotel AmenKila Luxury Hotels",
-            isLocation: false,
-          }
-        ]))
-        return
-      }
-      const data = JSON.parse(searchHistories)
-      setSearchHistory(data)
-    }
-
-   
-    fetchApiRecommendation()
-    fetchSearchHistory()
-  }, [searchDebounce])
-
-  function handleSubmit(e: React.FormEvent) {
-    e.preventDefault()
-    router.push(`hotels?${createQueryFindHotels()}`)
-  }
+  
 
   return (
     <div className="w-full flex flex-col gap-10">
@@ -176,7 +114,7 @@ export default function Home() {
 
               </div>
 
-              <SearchBar bookingData={bookingData} setBookingData={setBookingData} recomendation={recomendationTexts} setRecommendation={setRecomendationTexts} handleSubmit={handleSubmit} />
+              <SearchBar bookingData={bookingData} setBookingData={setBookingData} />
 
               <CategoryProperty setValue={setBookingData} value={bookingData} />
 

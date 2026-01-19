@@ -1,29 +1,30 @@
 import { Dispatch, RefObject, SetStateAction } from "react"
 import BookingIcons from "../Icons/Booking"
 import { BookingState, ShowInputGuestAndRoom } from "./models"
+import GetLabelDate from "@/utils/GetLabelDate"
 
 export default function BookingDate({
-    checkInRef,
-    checkOutRef,
-    value,
-    setValue,
-    showInput,
-    setShowInput
-} : {
-    checkInRef : RefObject<null>,
-    checkOutRef : RefObject<null>,
-    value : BookingState,
-    setValue : Dispatch<SetStateAction<BookingState>>,
-    showInput : ShowInputGuestAndRoom,
-    setShowInput : Dispatch<SetStateAction<ShowInputGuestAndRoom>>
+  checkInRef,
+  checkOutRef,
+  value,
+  setValue,
+  showInput,
+  setShowInput
+}: {
+  checkInRef: RefObject<null>,
+  checkOutRef: RefObject<null>,
+  value: BookingState,
+  setValue: Dispatch<SetStateAction<BookingState>>,
+  showInput: ShowInputGuestAndRoom,
+  setShowInput: Dispatch<SetStateAction<ShowInputGuestAndRoom>>
 }) {
 
-    return <div className="flex gap-2.5 p-2">
-        <ButtonSelectDate iconName="check_in" refDate={checkInRef} setValue={setValue} value={value} isCheckIn={true} />
-        <ButtonSelectDate iconName="check_out" refDate={checkOutRef} setValue={setValue} value={value} isCheckIn={false} />
-        <ButtonSelectTotalGuest setValue={setValue} value={value} setShowInput={setShowInput} showInput={showInput.guest} />
-        <ButtonSelectTotalRooms setValue={setValue} value={value} setShowInput={setShowInput} showInput={showInput.room} />
-    </div>
+  return <div className="flex gap-2.5 p-2">
+    <ButtonSelectDate iconName="check_in" refDate={checkInRef} setValue={setValue} value={value} isCheckIn={true} />
+    <ButtonSelectDate iconName="check_out" refDate={checkOutRef} setValue={setValue} value={value} isCheckIn={false} />
+    <ButtonSelectTotalGuest setValue={setValue} value={value} setShowInput={setShowInput} showInput={showInput.guest} />
+    <ButtonSelectTotalRooms setValue={setValue} value={value} setShowInput={setShowInput} showInput={showInput.room} />
+  </div>
 
 }
 
@@ -47,12 +48,9 @@ function ButtonSelectDate({
     }
   }
 
-  const months = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"]
-  // const days = [ "Minggu", "Senin", "Selasa", "Rabu", "Kamis", "Jum'at", "Sabut" ]
-
   const valueDate = new Date(value[isCheckIn ? "checkIn" : "checkOut"])
 
-  const labelDate = `${valueDate.getUTCDate()} ${months[valueDate.getUTCMonth()]} ${valueDate.getFullYear()}`
+  const labelDate = GetLabelDate(valueDate)
 
   // value untuk input (tahun-bulan-tanggal) (2026-01-13)
 

@@ -40,6 +40,13 @@ const Icons = (
                 <path d="M15 6.25V23.75M15 6.25L23.75 15M15 6.25L6.25 15" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
 
+        },
+        {
+            name: "hamburger-menu",
+            svg: <svg className={className} viewBox="0 0 30 30" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M3.75 7.5H26.25V10H3.75V7.5ZM3.75 13.75H26.25V16.25H3.75V13.75ZM3.75 20H26.25V22.5H3.75V20Z" fill="currentColor" />
+            </svg>
+
         }
     ].find(icon => icon.name === name);
 }

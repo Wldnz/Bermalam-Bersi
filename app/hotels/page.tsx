@@ -1,14 +1,22 @@
 "use client"
+import CategoryProperty from "@/components/FindHotel/CategoryProperty";
 import FastMenuContainer from "@/components/FindHotel/FastMenuContainer";
-import { BookingState } from "@/components/FindHotel/models";
+import { BookingState, RecomendationText } from "@/components/FindHotel/models";
 import RecommendationPopulerDestination from "@/components/FindHotel/RecommendationDestination";
+import SearchBar from "@/components/FindHotel/SearchBar";
+import SearchHotelBar from "@/components/FindHotel/SearchHotelsBar";
+import ActionIcon from "@/components/Icons/Action";
+import BookingIcons from "@/components/Icons/Booking";
 import HotelIcons from "@/components/Icons/Hotel";
 import Navigation from "@/components/Navigation";
 import Hotel from "@/models/Hotel";
 import Api from "@/utils/Api";
+import CreateQueryFindHotels from "@/utils/CreateQueryFindHotels";
+import FetchHotels from "@/utils/FetchHotels";
 import Image from "next/image";
+import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { useEffect, useState } from "react";
+import { Dispatch, SetStateAction, useEffect, useRef, useState } from "react";
 
 
 
@@ -18,65 +26,60 @@ export default function Hotels() {
 
     const currentTime = new Date().getTime()
 
-    const bookingData = {
-        search: searchParams.get("search"),
-        checkInDate: searchParams.get("check_in"),
-        checkOutDate: searchParams.get("check_out"),
-        totalAdults: searchParams.get("total_adults"),
-        totalChildrens: searchParams.get("total_childrens"),
-        totalRooms: searchParams.get("total_rooms"),
-        category: searchParams.get("category_property"),
-    }
-
-    const [bookingDate, setBookingDate] = useState<BookingState>({
-        search: bookingData.search ? bookingData.search : "",
-        checkIn: bookingData.checkInDate ? Number(bookingData.checkInDate) : currentTime,
-        checkOut: bookingData.checkOutDate ? Number(bookingData.checkOutDate) : currentTime + (60 * 60 * 24 * 1000),
-        category: bookingData.category ? bookingData.category : "all",
-        guests: {
-            adults: bookingData.totalAdults ? Number(bookingData.totalAdults) : 1,
-            childrens: bookingData.totalChildrens ? Number(bookingData.totalChildrens) : 0,
+    const defaultBookingDate = {
+        search: searchParams.get("search") ?? "",
+        checkIn: searchParams.get("check_in") ? Number(searchParams.get("check_in")) : currentTime,
+        checkOut: searchParams.get("check_out") ? Number(searchParams.get("check_out")) :  currentTime + (60 * 60 * 24 * 1000),
+        guests : {
+            adults : searchParams.get("total_adults") ? Number(searchParams.get("total_adults")) :  1,
+            childrens : searchParams.get("total_childrens") ? Number(searchParams.get("total_childrens")) : 0,
         },
-        totalRooms: bookingData.totalRooms ? Number(bookingData.totalRooms) : 1,
-    })
-
-    function createQueryFindHotels() {
-        const query = `search=${bookingDate.search}&category_property=${bookingDate.category}&check_in=${bookingDate.checkIn}&check_out=${bookingDate.checkOut}&total_adults=${bookingDate.guests.adults}&total_childrens=${bookingDate.guests.childrens}&total_rooms=${bookingDate.totalRooms}`
-        return query
+        totalRooms: searchParams.get("total_rooms") ? Number(searchParams.get("total_rooms")) : 1,
+        category: searchParams.get("category_property") ?? "all",
     }
+
+    const [bookingDate, setBookingDate] = useState<BookingState>(defaultBookingDate)
+
+    const [ showUpdatedData, setShowUpdatedData ] = useState<boolean>(false)
+
+    function isDataHasBeenUpdate(){
+        if (defaultBookingDate.search != bookingDate.search) return true
+        if (!checkIsTheDaySameOrSameMonth(defaultBookingDate.checkIn, bookingDate.checkIn)) return true
+        if (!checkIsTheDaySameOrSameMonth(defaultBookingDate.checkOut, bookingDate.checkOut)) return true
+        if (defaultBookingDate.guests.adults != bookingDate.guests.adults) return true
+        if (defaultBookingDate.guests.childrens != bookingDate.guests.childrens) return true
+        if (defaultBookingDate.totalRooms != bookingDate.totalRooms) return true
+        if (defaultBookingDate.category != bookingDate.category) return true
+        return false
+    }
+
+    function checkIsTheDaySameOrSameMonth(date1 : number, date2 : number){
+        const currenDate1 = new Date(date1)
+        const currentDate2 = new Date(date2)
+        return currenDate1.getDate() == currentDate2.getDate() && currenDate1.getMonth() == currentDate2.getMonth()
+    }
+    
 
     const [hotels, setHotels] = useState<Hotel[] | []>([]);
 
-    useEffect(() => {
-
-        const api = Api()
-
-        const fetchHotels = async () => {
-            const queryParams = createQueryFindHotels()
-
-            try {
-                const { status, data } = await api.get(`/hotels?${queryParams}`)
-                if (status == 200) setHotels(data.data)
-                console.log(data)
-            } catch {
-                setHotels([])
-            }
-        }
-
-        fetchHotels()
-
-    }, [])
-
+    useEffect(() => { FetchHotels(setHotels, bookingDate) }, [])
 
     return <div className="flex flex-col gap-10">
         <div className="w-full h-full p-6">
             <Navigation border={true} />
         </div>
-        <div className="w-full h-12 flex justify-center items-center bg-(--status-refund)"></div>
+        <div className="w-full h-16 flex justify-center items-center bg-(--status-refund)">
+            <CategoryProperty setValue={setBookingDate} value={bookingDate} />
+        </div>
+
+        <SearchHotelBar setValue={setBookingDate} value={bookingDate} setHotels={setHotels} isUpdatedData={isDataHasBeenUpdate()} />
+
         <div className="p-3 flex flex-col gap-6">
             {/* title & layout structure */}
             <div className="flex justify-between items-center">
-                <h3 className="text-lg">Kami Menemukan 10 Tempat Bermalam Yang Cocok</h3>
+                <h3 className="text-lg">{
+                    !hotels.length ? "Tidak Menemukan Tempat Bermalam Yang Tersedia!" : `Kami Menemukan ${hotels.length} Tempat Bermalam Yang Cocok`
+                }</h3>
                 <div className="flex gap-5">
                     <button className="grid grid-cols-2 grid-rows-2 gap-1 cursor-pointer">
                         <div className="w-6 h-6 border-2 border-(--status-refund) rounded-lg"></div>
@@ -92,10 +95,17 @@ export default function Hotels() {
             </div>
             {/* hotels here */}
             <div className="flex flex-col gap-2.5">
-                { hotels.map((hotel, i) => {
-                    return <DefaultHotelCard key={`hotel-name-${hotel.name}-${i}`} hotel={hotel} />
-                }) }
-
+                {hotels.length ?
+                    hotels.map((hotel, i) => {
+                        return <DefaultHotelCard key={`hotel-name-${hotel.name}-${i}`} hotel={hotel} />
+                    }) : <div className="h-dvh flex flex-col items-center gap-10 p-5">
+                        <ActionIcon className="w-35 h-35 text-(--status-refund)" name="close_outline" />
+                        <div className="flex flex-col items-center gap-2.5">
+                            <h2 className="font-bold text-xl text-(--status-refund)">Maaf Kami Tidak Dapat Menemukan Hotel Yang Anda Cari</h2>
+                            <p>Maaf, Kami tidak menemukan tempat bermalam yang sesuai dengan kebutuhan akomodasi anda</p>
+                        </div>
+                    </div>
+                }
             </div>
         </div>
         <RecommendationPopulerDestination />
@@ -103,8 +113,27 @@ export default function Hotels() {
     </div>
 }
 
-function DefaultHotelCard({ hotel } : { hotel : Hotel }) {
-    return <div className="p-3 flex gap-3.5 hover:border-2 border-(--status-refund) rounded-2xl">
+function DefaultHotelCard({ hotel }: { hotel: Hotel }) {
+
+    const price = {
+        default: Number(hotel.default_price),
+        minimum: Number(hotel.minimum_price),
+        totalRooms: Number(hotel.total_rooms),
+        discount: 0,
+        discountLabel: "",
+        priceLabel: "",
+        roomLabel: "",
+    }
+
+    price.roomLabel = totalRoomsLabel(price.totalRooms)
+    price.priceLabel = getCurrentPriceLabel(price.default, price.minimum)
+    price.discount = (price.default - price.minimum) / price.default * 100
+    price.discountLabel = `${price.discount}%`
+
+
+    return <Link className="p-3 flex gap-3.5 hover:border-2 border-(--status-refund) rounded-2xl"
+        href={`/hotels/${hotel.id}`}
+    >
         <Image
             className="h-60 rounded-lg"
             width={300}
@@ -115,9 +144,9 @@ function DefaultHotelCard({ hotel } : { hotel : Hotel }) {
         <div className="w-[65%] flex flex-col gap-2.5">
             <h3 className="font-bold text-xl">{hotel.name}</h3>
             <div className="flex items-center gap-2.5">
-                { Array(Number(hotel.stars)).fill(null).map((v, i) => {
+                {Array(Number(hotel.stars)).fill(null).map((v, i) => {
                     return <HotelIcons key={`stars-${i}`} className="w-5 h-5 text-(--status-wait)" name="star" />
-                }) }
+                })}
                 <p> | Sangat Baik</p>
             </div>
             <div className="flex gap-2.5">
@@ -128,47 +157,38 @@ function DefaultHotelCard({ hotel } : { hotel : Hotel }) {
             <p className="max-w-100">{hotel.description}</p>
         </div>
         {/* prices */}
-        <div className="w-full flex flex-col justify-between items-end">
-            <span className="p-1.5 px-2 text-center text-background font-bold bg-(--status-refund) rounded-lg">Diskon 20%</span>
+        <div className={`w-full flex flex-col ${price.minimum != 0 ? "justify-between" : "justify-end"} items-end`}>
+            {price.minimum != 0 && <span className="p-1.5 px-2 text-center text-background font-bold bg-(--status-refund) rounded-lg">{price.discountLabel}</span>}
             <div className="flex flex-col items-end gap-2.5">
-                <h4 className="font-bold text-(--status-refund)">{totalRoomsLabel(Number(hotel.total_rooms))}</h4>
-                <p className="line-through">{hotel.default_price}</p>
-                <h3 className="font-bold text-(--status-refund) text-2xl">{getCurrentPriceLabel( Number(hotel.default_price), Number(hotel.minimum_price) )}</h3>
+                <h4 className="font-bold text-(--status-refund)">{price.roomLabel}</h4>
+                {price.minimum != 0 && <p className="line-through">{convertNumberIntoIDR(price.default)}</p>}
+                <h3 className="font-bold text-(--status-refund) text-2xl">{price.priceLabel}</h3>
                 <button className="w-full p-3 font-bold text-background bg-(--status-refund) cursor-pointer rounded-sm">Lihat Kamar</button>
             </div>
         </div>
-    </div>
+    </Link>
 }
 
-function totalRoomsLabel(total : number){
+function totalRoomsLabel(total: number) {
     let label = "Kamar Terakhir"
     if (total > 1) label = `${total} Kamar Tersedia`
     return label
 }
 
 function getCurrentPriceLabel(
-    defaultPrice : number,
-    minimumPrice : number
-){
+    defaultPrice: number,
+    minimumPrice: number
+) {
     if (minimumPrice <= 0) return convertNumberIntoIDR(defaultPrice)
     return convertNumberIntoIDR(minimumPrice)
 }
 
-function convertNumberIntoIDR( price : number ){
+function convertNumberIntoIDR(price: number) {
     return new Intl.NumberFormat(
         'id-ID',
         {
-            style : "currency",
-            currency : "IDR"
+            style: "currency",
+            currency: "IDR"
         }
     ).format(price)
-}
-
-function getCurrentDiscountLabel( defaultPrice : number, minimumPrice : number ){
-    if (minimumPrice == 0){
-        
-    }
-    return {
-
-    }
 }
