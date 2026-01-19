@@ -7,24 +7,32 @@ import GetLabelDate from "@/utils/GetLabelDate"
 import RecommendationSearch from "./RecommendationSearch"
 import Hotel from "@/models/Hotel"
 import FetchHotels from "@/utils/FetchHotels"
+import isDataHasBeenUpdate from "@/utils/CheckIsBookingDataIsUpdated"
 
 export default function SearchHotelBar({
     value,
+    defaultValue,
     setValue,
     setHotels,
-    isUpdatedData
+    isUpdatedData,
+    setIsUpdatedData
 }: {
     value: BookingState,
+    defaultValue: BookingState,
     setValue: Dispatch<SetStateAction<BookingState>>,
     setHotels: Dispatch<SetStateAction<Hotel[] | []>>,
-    isUpdatedData: boolean
+    isUpdatedData: boolean,
+    setIsUpdatedData: Dispatch<SetStateAction<boolean>>
 }) {
     const [showBookingDate, setShowBokingDate] = useState<boolean>(false)
     return <div className="w-full flex flex-col justify-center items-center gap-2.5">
         {isUpdatedData && <div className="w-full text-center bg-background p-2">
             <span>Kamu Telah Merubah Data Pemesanan Tempat Bermalam, </span>
             <button className="text-(--status-refund) cursor-pointer"
-                onClick={() => FetchHotels(setHotels, value)}
+                onClick={() => {
+                    FetchHotels(setHotels, value)
+                    setIsUpdatedData(false)
+                }}
             >Klik Disini Untuk Mencocokan Kembali</button>
         </div>}
         <form
@@ -33,6 +41,7 @@ export default function SearchHotelBar({
                 e.preventDefault()
                 FetchHotels(setHotels, value)
             }}
+            onInput={() => setIsUpdatedData(isDataHasBeenUpdate(defaultValue, value))}
         >
             <button className="px-2 h-full border-r-2 border-(--status-refund) cursor-pointer"
                 type="submit"
@@ -61,10 +70,12 @@ export default function SearchHotelBar({
             </div>
             <button className="px-2 h-full cursor-pointer"
                 onClick={() => setShowBokingDate(prev => !prev)}
+                type="button"
             >
-                <ActionIcon className="w-5 h-5 text-(--status-refund)" name={showBookingDate ? "close_tight" : "hamburger-menu"} />
+                <ActionIcon className="w-5 h-5 text-(--status-refund)" name={showBookingDate ? "close_tight" : "hamburger-menu"}
+                />
             </button>
-            {!showBookingDate && <RecommendationSearch setValue={setValue} value={value} />}
+            {!showBookingDate && defaultValue.search != value.search && <RecommendationSearch setValue={setValue} value={value} />}
         </form>
     </div>
 }
@@ -82,6 +93,7 @@ function BookingDate({
     const currentDate = new Date(bookingDate[isCheckin ? "checkIn" : "checkOut"])
     const ref = useRef(null)
     return <button className="h-full flex items-center gap-2.5 px-2 relative border-x border-(--status-refund)"
+        type="button"
         onClick={() => {
             if (ref.current && (ref.current as HTMLInputElement).showPicker) {
                 (ref.current as HTMLInputElement).showPicker()
@@ -119,6 +131,7 @@ function SelectGuest({
     const [isShow, setIsShow] = useState<boolean>(false)
     return <div className="w-max h-ful relative">
         <button className="h-full flex items-center px-2 gap-2.5 border-x-2 border-(--status-refund)"
+            type="button"
             onClick={() => setIsShow(prev => !prev)}
         >
             <BookingIcons className="w-6 h-6 text-(--status-refund)" name="adult" />
@@ -198,6 +211,7 @@ function SelectTotalRooms({
     return <div className="w-max h-ful relative">
         <button className="h-full flex items-center px-2 gap-2.5"
             onClick={() => setIsShow(prev => !prev)}
+            type="button"
         >
             <BookingIcons className="w-6 h-6 text-(--status-refund)" name="room" />
             <span className="">{value.totalRooms} Kamar</span>

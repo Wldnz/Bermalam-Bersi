@@ -11,6 +11,7 @@ import HotelIcons from "@/components/Icons/Hotel";
 import Navigation from "@/components/Navigation";
 import Hotel from "@/models/Hotel";
 import Api from "@/utils/Api";
+import isDataHasBeenUpdate from "@/utils/CheckIsBookingDataIsUpdated";
 import CreateQueryFindHotels from "@/utils/CreateQueryFindHotels";
 import FetchHotels from "@/utils/FetchHotels";
 import Image from "next/image";
@@ -29,10 +30,10 @@ export default function Hotels() {
     const defaultBookingDate = {
         search: searchParams.get("search") ?? "",
         checkIn: searchParams.get("check_in") ? Number(searchParams.get("check_in")) : currentTime,
-        checkOut: searchParams.get("check_out") ? Number(searchParams.get("check_out")) :  currentTime + (60 * 60 * 24 * 1000),
-        guests : {
-            adults : searchParams.get("total_adults") ? Number(searchParams.get("total_adults")) :  1,
-            childrens : searchParams.get("total_childrens") ? Number(searchParams.get("total_childrens")) : 0,
+        checkOut: searchParams.get("check_out") ? Number(searchParams.get("check_out")) : currentTime + (60 * 60 * 24 * 1000),
+        guests: {
+            adults: searchParams.get("total_adults") ? Number(searchParams.get("total_adults")) : 1,
+            childrens: searchParams.get("total_childrens") ? Number(searchParams.get("total_childrens")) : 0,
         },
         totalRooms: searchParams.get("total_rooms") ? Number(searchParams.get("total_rooms")) : 1,
         category: searchParams.get("category_property") ?? "all",
@@ -40,25 +41,8 @@ export default function Hotels() {
 
     const [bookingDate, setBookingDate] = useState<BookingState>(defaultBookingDate)
 
-    const [ showUpdatedData, setShowUpdatedData ] = useState<boolean>(false)
+    const [showUpdatedData, setShowUpdatedData] = useState<boolean>(isDataHasBeenUpdate(defaultBookingDate, bookingDate))
 
-    function isDataHasBeenUpdate(){
-        if (defaultBookingDate.search != bookingDate.search) return true
-        if (!checkIsTheDaySameOrSameMonth(defaultBookingDate.checkIn, bookingDate.checkIn)) return true
-        if (!checkIsTheDaySameOrSameMonth(defaultBookingDate.checkOut, bookingDate.checkOut)) return true
-        if (defaultBookingDate.guests.adults != bookingDate.guests.adults) return true
-        if (defaultBookingDate.guests.childrens != bookingDate.guests.childrens) return true
-        if (defaultBookingDate.totalRooms != bookingDate.totalRooms) return true
-        if (defaultBookingDate.category != bookingDate.category) return true
-        return false
-    }
-
-    function checkIsTheDaySameOrSameMonth(date1 : number, date2 : number){
-        const currenDate1 = new Date(date1)
-        const currentDate2 = new Date(date2)
-        return currenDate1.getDate() == currentDate2.getDate() && currenDate1.getMonth() == currentDate2.getMonth()
-    }
-    
 
     const [hotels, setHotels] = useState<Hotel[] | []>([]);
 
@@ -72,7 +56,7 @@ export default function Hotels() {
             <CategoryProperty setValue={setBookingDate} value={bookingDate} />
         </div>
 
-        <SearchHotelBar setValue={setBookingDate} value={bookingDate} setHotels={setHotels} isUpdatedData={isDataHasBeenUpdate()} />
+        <SearchHotelBar setValue={setBookingDate} value={bookingDate} defaultValue={defaultBookingDate} setHotels={setHotels} isUpdatedData={showUpdatedData} setIsUpdatedData={setShowUpdatedData} />
 
         <div className="p-3 flex flex-col gap-6">
             {/* title & layout structure */}
