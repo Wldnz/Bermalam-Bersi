@@ -88,7 +88,7 @@ export default function Home() {
         <div className="w-full h-full bg-foreground opacity-60"></div>
 
         <div className="w-full h-full p-6 absolute top-0 lef-0 ">
-          <Navigation border={false}/>
+          <Navigation border={false} currency={false}/>
 
           <div className="w-ful flex flex-col items-center gap-10 mt-14">
 

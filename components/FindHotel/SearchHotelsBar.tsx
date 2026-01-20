@@ -35,48 +35,53 @@ export default function SearchHotelBar({
                 }}
             >Klik Disini Untuk Mencocokan Kembali</button>
         </div>}
-        <form
-            className={`w-210 h-12 px-1 flex justify-between items-center border-2 border-(--status-refund) rounded-2xl relative`}
-            onSubmit={(e) => {
-                e.preventDefault()
-                FetchHotels(setHotels, value)
-            }}
-            onInput={() => setIsUpdatedData(isDataHasBeenUpdate(defaultValue, value))}
-        >
-            <button className="px-2 h-full border-r-2 border-(--status-refund) cursor-pointer"
-                type="submit"
+        <div className="w-full flex justify-center items-center gap-2.5">
+            <form
+                className={`w-210 h-12 px-1 flex justify-between items-center border-2 border-(--status-refund) rounded-2xl relative`}
+                onSubmit={(e) => {
+                    e.preventDefault()
+                    FetchHotels(setHotels, value)
+                }}
+                onInput={() => setIsUpdatedData(isDataHasBeenUpdate(defaultValue, value))}
             >
-                <ActionIcon className="w-8 h-8 text-(--status-refund)" name="search" />
+                <button className="px-2 h-full border-r-2 border-(--status-refund) cursor-pointer"
+                    type="submit"
+                >
+                    <ActionIcon className="w-8 h-8 text-(--status-refund)" name="search" />
+                </button>
+                <div className="w-full h-full flex">
+                    {showBookingDate ? <>
+                        <BookingDate setBookingDate={setValue} bookingDate={value} isCheckin={true} />
+                        <BookingDate setBookingDate={setValue} bookingDate={value} isCheckin={false} />
+                        <SelectGuest value={value} setValue={setValue} />
+                        <SelectTotalRooms value={value} setValue={setValue} />
+                    </> : <input
+                        className="w-full outline-none px-2"
+                        placeholder="Cari Nama Hotel Atau Lokasi Yang Ingin Kamu Tuju!"
+                        aria-describedby="find hotel, search hotel, temukan hotel, nama hotel"
+                        type="text"
+                        value={value.search}
+                        onChange={(e) => setValue(prev => {
+                            return {
+                                ...prev,
+                                ...{ search: e.target.value }
+                            }
+                        })}
+                    />}
+                </div>
+                <button className="px-2 h-full cursor-pointer"
+                    onClick={() => setShowBokingDate(prev => !prev)}
+                    type="button"
+                >
+                    <ActionIcon className="w-5 h-5 text-(--status-refund)" name={showBookingDate ? "close_tight" : "hamburger-menu"}
+                    />
+                </button>
+                {!showBookingDate && defaultValue.search != value.search && <RecommendationSearch setValue={setValue} value={value} />}
+            </form>
+            <button className="p-2 flex justify-center items-center rounded-lg bg-(--status-refund) cursor-pointer">
+                <ActionIcon className="w-6 h-6 text-background" name="filter_1" />
             </button>
-            <div className="w-full h-full flex">
-                {showBookingDate ? <>
-                    <BookingDate setBookingDate={setValue} bookingDate={value} isCheckin={true} />
-                    <BookingDate setBookingDate={setValue} bookingDate={value} isCheckin={false} />
-                    <SelectGuest value={value} setValue={setValue} />
-                    <SelectTotalRooms value={value} setValue={setValue} />
-                </> : <input
-                    className="w-full outline-none px-2"
-                    placeholder="Cari Nama Hotel Atau Lokasi Yang Ingin Kamu Tuju!"
-                    aria-describedby="find hotel, search hotel, temukan hotel, nama hotel"
-                    type="text"
-                    value={value.search}
-                    onChange={(e) => setValue(prev => {
-                        return {
-                            ...prev,
-                            ...{ search: e.target.value }
-                        }
-                    })}
-                />}
-            </div>
-            <button className="px-2 h-full cursor-pointer"
-                onClick={() => setShowBokingDate(prev => !prev)}
-                type="button"
-            >
-                <ActionIcon className="w-5 h-5 text-(--status-refund)" name={showBookingDate ? "close_tight" : "hamburger-menu"}
-                />
-            </button>
-            {!showBookingDate && defaultValue.search != value.search && <RecommendationSearch setValue={setValue} value={value} />}
-        </form>
+        </div>
     </div>
 }
 

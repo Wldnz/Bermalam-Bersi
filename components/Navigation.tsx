@@ -35,8 +35,26 @@ const navigationLink = [
 ]
 
 export default function Navigation({
+    border = true,
+    currency = true,
+    showNavigation = true
+}: {
+    border?: boolean,
+    currency?: boolean,
+    showNavigation?: boolean,
+}) {
+    return <div className="w-full flex flex-col gap-5 px-4">
+        {currency && <div className="w-full min-h-10 flex justify-end items-center gap-4">
+            <button className="p-2 bg-(--status-refund) text-background text-xs rounded-b-xl cursor-pointer">Mata Uang : Rupiah</button>
+            <button className="p-2 bg-(--status-refund) text-background text-xs rounded-b-xl cursor-pointer">Bahasa : Indonesia</button>
+        </div>}
+        { showNavigation && <NavigationBar border={border} /> }
+    </div>
+}
+
+function NavigationBar({
     border = false
-} : {
+}: {
     border: boolean
 }) {
 
@@ -45,16 +63,16 @@ export default function Navigation({
     const [showNavigation, setShowNavigation] = useState<boolean>(true)
 
     return <div className="flex justify-between items-center">
-        
-        {showNavigation ? <SideNaviagtionButtonHidden/> : <SideNavigationButton iconName="bermalam" setshow={setShowNavigation} value={true}  />}
 
-        {!showNavigation ? <></> : <div className={`w-full max-w-225 h-11 p-2.5 px-5 flex justify-between items-center gap-2.5 rounded-2xl bg-white ${border? "border-2 border-(--status-refund)" : ""}`}>
+        {showNavigation ? <SideNaviagtionButtonHidden /> : <SideNavigationButton iconName="bermalam" setshow={setShowNavigation} value={true} />}
+
+        {!showNavigation ? <></> : <div className={`w-full max-w-225 h-11 p-2.5 px-5 flex justify-between items-center gap-2.5 rounded-2xl bg-white ${border ? "border-2 border-(--status-refund)" : ""}`}>
             <Link
                 href={"/"}
                 className="flex h-full justify-center items-center gap-2"
             >
                 <Image
-                    src={"/icons/bermalam.svg"}
+                    src="/icons/bermalam.svg"
                     className="rounded-full"
                     height={25}
                     width={25}
@@ -99,7 +117,7 @@ export default function Navigation({
     </div>
 }
 
-function SideNaviagtionButtonHidden(){
+function SideNaviagtionButtonHidden() {
     return <div className="w-11 h-11"></div>
 }
 
@@ -108,8 +126,8 @@ function SideNavigationButton(
         value,
         iconName,
         setshow,
-    } : {
-        value : boolean,
+    }: {
+        value: boolean,
         iconName: string,
         setshow: Dispatch<SetStateAction<boolean>>
     }
@@ -119,7 +137,7 @@ function SideNavigationButton(
         onClick={() => setshow(value)}
     >
         <Image
-            src={`icons/${iconName}.svg`}
+            src={`/icons/${iconName}.svg`}
             className="rounded-full"
             height={25}
             width={25}
