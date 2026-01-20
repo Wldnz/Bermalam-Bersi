@@ -47,8 +47,8 @@ type ResultFeedback struct {
 
 type ResultHotelLocation struct {
 	ID        int    `json:"id"`
-	Address_1 string `json:"address_2"`
-	Address_2 string `json:"address_1"`
+	Address_1 string `json:"address_1"`
+	Address_2 string `json:"address_2"`
 	ZipCode   string `json:"zip_code"`
 	Country   string `json:"country"`
 	Province  string `json:"province"`
