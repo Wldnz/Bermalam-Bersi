@@ -11,6 +11,7 @@ import (
 	guest_discount "bersi.bermalam.id/api/guest/discounts"
 	guest_faqs "bersi.bermalam.id/api/guest/faqs"
 	guest "bersi.bermalam.id/api/guest/hotels"
+	hotel_room "bersi.bermalam.id/api/guest/hotels/rooms"
 	guest_transactions "bersi.bermalam.id/api/guest/transactions"
 	"github.com/gin-gonic/gin"
 )
@@ -74,6 +75,9 @@ func InitiliazeApi(g *gin.Engine) {
 	g.GET("/hotels", guest.FindHotels)
 	g.GET("/hotels/:id", guest.DetailHotel)
 	g.GET("/hotel-recomendation-name", guest.RecomendationLocationHotel)
+
+	// detail room
+	g.GET("/rooms/:id", hotel_room.GetDetailRoom)
 
 	g.POST("/create-booking", guest_transactions.CreateTransaction)
 	g.GET("/status-transaction-doku/:invoice", guest_transactions.CheckTransactionStatus)
