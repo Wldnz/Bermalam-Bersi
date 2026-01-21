@@ -24,6 +24,7 @@ export default function RootLayout({
         className={`${interFont.variable} antialiased`}
       >
         {children}
+        <div className="w-full h-30"></div>
       <Footer/>
       </body>
     </html>

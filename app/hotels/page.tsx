@@ -11,7 +11,9 @@ import TransactionIcons from "@/components/Icons/Transactions";
 import Navigation from "@/components/Navigation";
 import Hotel from "@/models/Hotel";
 import isDataHasBeenUpdate from "@/utils/CheckIsBookingDataIsUpdated";
+import convertNumberIntoIDR from "@/utils/ConvertNumberToIDR";
 import FetchHotels from "@/utils/FetchHotels";
+import { getCurrentPriceLabel, totalRoomsLabel } from "@/utils/HotelPrice";
 import Image from "next/image";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
@@ -230,29 +232,7 @@ function DefaultHotelCard({ hotel }: { hotel: Hotel }) {
     </Link>
 }
 
-function totalRoomsLabel(total: number) {
-    let label = "Kamar Terakhir"
-    if (total > 1) label = `${total} Kamar Tersedia`
-    return label
-}
 
-function getCurrentPriceLabel(
-    defaultPrice: number,
-    minimumPrice: number
-) {
-    if (minimumPrice <= 0) return convertNumberIntoIDR(defaultPrice)
-    return convertNumberIntoIDR(minimumPrice)
-}
-
-function convertNumberIntoIDR(price: number) {
-    return new Intl.NumberFormat(
-        'id-ID',
-        {
-            style: "currency",
-            currency: "IDR"
-        }
-    ).format(price)
-}
 
 function HotelNotFound() {
     return <div className="w-full h-dvh flex flex-col items-center gap-10 p-5">
