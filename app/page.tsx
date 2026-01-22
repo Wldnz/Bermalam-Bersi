@@ -12,6 +12,7 @@ import HotelIcons from "@/components/Icons/Hotel";
 import Image from "next/image";
 import RecommendationPopulerDestination from "@/components/FindHotel/RecommendationDestination";
 import FastMenuContainer from "@/components/FindHotel/FastMenuContainer";
+import GetTotalNights from "@/utils/GetTotalNight";
 
 
 
@@ -46,7 +47,7 @@ export default function Home() {
 
   const [searchHistory, setSearchHistory] = useState<SearchHistoryLocation[] | []>([])
 
-  const totalNight = Math.round((bookingData.checkOut - bookingData.checkIn) / oneDayMili);
+  const totalNight = GetTotalNights( bookingData.checkIn, bookingData.checkOut )
 
 
 

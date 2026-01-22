@@ -4,14 +4,18 @@ import ActionIcon from "@/components/Icons/Action"
 import BookingIcons from "@/components/Icons/Booking"
 import HotelIcons from "@/components/Icons/Hotel"
 import Navigation from "@/components/Navigation"
+import { useBooking } from "@/context/Booking"
+import { OrderRoom, TypeRoom } from "@/models/Room"
 import Api from "@/utils/Api"
 import convertNumberIntoIDR from "@/utils/ConvertNumberToIDR"
 import CreateQueryFindHotels from "@/utils/CreateQueryFindHotels"
+import GetLabelDate from "@/utils/GetLabelDate"
+import GetTotalNights from "@/utils/GetTotalNight"
 import { getCurrentPriceLabel, totalRoomsLabel } from "@/utils/HotelPrice"
 import Image from "next/image"
 import Link from "next/link"
-import { useParams, useSearchParams } from "next/navigation"
-import { useEffect, useState } from "react"
+import { useParams, useRouter, useSearchParams } from "next/navigation"
+import { useEffect, useRef, useState } from "react"
 
 interface FeedbackHotel {
     id: number
@@ -23,22 +27,7 @@ interface FeedbackHotel {
     room_names: string
 }
 
-interface TypeRoom {
-    id: number
-    name: string
-    description: string
-    max_adults: number
-    max_childrens: number
-    room_size: number
-    bed_type: string
-    refundable: boolean
-    free_cancel: boolean
-    how_long_to_cancel: number
-    default_price: string
-    minimum_price: string
-    total_rooms: number
-    image_url: string
-}
+
 
 interface DetailRoom {
     images: {
@@ -57,11 +46,8 @@ interface DetailRoom {
 }
 
 // interface buat pemesanan kamar, ambil data dari typeRoom dan detailRoom ada quantity juga
-interface OrderRoom {
-    room: TypeRoom
-    detailRoom: DetailRoom
-    quantity: number
-}
+
+
 
 interface DetailHotel {
     id: number
@@ -107,9 +93,16 @@ export default function DetailHotel() {
 
     const { id } = useParams()
 
+    const router = useRouter()
+
     const searchParams = useSearchParams()
 
     const currentTime = new Date().getTime()
+
+    const checkInRef = useRef(null)
+    const checkOutRef = useRef(null)
+
+    const bookingContext = useBooking();
 
     const defaultBookingDate = {
         search: searchParams.get("search") ?? "",
@@ -135,21 +128,27 @@ export default function DetailHotel() {
 
     const [orders, setOrders] = useState<OrderRoom[] | []>([])
 
+    const [showAlert, setShowAlert] = useState<boolean>(false)
+
     const [showPopUp, setShowPopUp] = useState({
         feedbacks: false,
         booking: false,
         orders: false,
+        guests: false,
+        rooms: false,
     })
 
-    useEffect(() => {
-        const fetchDetailHotel = async () => {
-            try {
-                const { data, status } = await Api().get(`/hotels/${id}?${CreateQueryFindHotels(bookingDate)}`)
-                if (status == 200) setDataHotel(data.data)
-            } catch {
-                setDataHotel(null)
-            }
+    async function fetchDetailHotel() {
+        try {
+            const { data, status } = await Api().get(`/hotels/${id}?${CreateQueryFindHotels(bookingDate)}`)
+            if (status == 200) setDataHotel(data.data)
+        } catch {
+            setDataHotel(null)
         }
+        setOrders([])
+    }
+
+    useEffect(() => {
         fetchDetailHotel()
     }, [])
 
@@ -170,45 +169,229 @@ export default function DetailHotel() {
         fetchDetailRoom()
     }, [currentRoom])
 
+    const totalNights = GetTotalNights(bookingDate.checkIn, bookingDate.checkOut)
+
+
+
     return <div className="w-full min-h-dvh flex flex-col font-inter">
         <Navigation />
         {/* detail hotel will be here... */}
         {dataHotel && <div className="flex flex-col p-4 gap-6">
+
+            {/* alert */}
+            {showAlert ? <div className="w-full h-dvh flex items-center justify-center fixed top-0 left-0 z-30">
+                <div className="min-w-150 flex flex-col items-center gap-2.5 border-4 min-h-20 bg-white rounded-xl p-5">
+                    <ActionIcon className="w-15 h-15 text-(--status-done)" name="success_outline" />
+                    <div className="flex flex-col items-center gap-1">
+                        <h2 className="font-bold text-xl">Berhasil Menambahkan Pemesanan</h2>
+                        <span className="text-sm">Apakah anda ingin menambahkan kamar lain?</span>
+                    </div>
+                    <div className="w-full flex flex-col gap-2.5">
+                        <button className="w-full p-3 font-bold text-background bg-foreground rounded-lg cursor-pointer"
+                            onClick={() => setShowAlert(false)}
+                        >Ya, Saya ingin menambahkan Kamar Lain</button>
+                        <button className="w-full p-3 font-bold text-foreground bg-background rounded-lg cursor-pointer"
+                            onClick={() => {
+                                setShowAlert(false)
+                                setShowPopUp(prev => {
+                                    return {
+                                        ...prev,
+                                        ...{
+                                            orders: true
+                                        }
+                                    }
+                                })
+                            }}
+                        >Tidak, Arahkan Saya Ke Pembayaran</button>
+                    </div>
+                </div>
+            </div> : <></>}
+
             <span>Home/ Hotels/ {dataHotel?.name}</span>
 
             {/* summary booking date */}
             <div className="w-80 p-3 flex flex-col gap-2.5 bg-white border-3 border-(--status-refund) fixed top-10 right-0 rounded-lg rounded-bl-none">
                 <span className="">Ringkasan Kunjungan Anda!</span>
                 {showPopUp.booking && <div className="flex flex-col gap-3">
-                    <div className="flex flex-col gap-1.5">
+                    <div className="flex flex-col gap-1.5 relative">
                         <h4 className="font-bold">Check-In</h4>
-                        <button className="w-max p-2 flex items-center gap-1 border-2 border-(--status-refund) rounded-lg cursor-pointer">
+                        <button className="w-max p-2 flex items-center gap-1 border-2 border-(--status-refund) rounded-lg cursor-pointer"
+                            onClick={() => {
+                                if (checkInRef.current && (checkInRef.current as HTMLInputElement).showPicker) {
+                                    (checkInRef.current as HTMLInputElement).showPicker()
+                                }
+                            }}
+                        >
                             <BookingIcons className="w-7 h-7 text-(--status-refund)" name="check_in" />
-                            <span>21 November 2025</span>
+                            <span>{GetLabelDate(new Date(bookingDate.checkIn))}</span>
                         </button>
+                        <input
+                            className="absolute top-0 left-0 opacity-0"
+                            type="date"
+                            onChange={(e) => setBookingDate(prev => {
+                                return {
+                                    ...prev,
+                                    ...{
+                                        checkIn: new Date(e.target.value).getTime()
+                                    }
+                                }
+                            })}
+                            value={(new Date(bookingDate.checkIn)).toISOString().split("T")[0]}
+                            ref={checkInRef}
+                        />
                     </div>
                     <div className="flex flex-col gap-1.5">
-                        <h4 className="font-bold">Check-In</h4>
-                        <button className="w-max p-2 flex items-center gap-1 border-2 border-(--status-refund) rounded-lg cursor-pointer">
+                        <h4 className="font-bold">Check-Out</h4>
+                        <button className="w-max p-2 flex items-center gap-1 border-2 border-(--status-refund) rounded-lg cursor-pointer"
+                            onClick={() => {
+                                if (checkOutRef.current && (checkOutRef.current as HTMLInputElement).showPicker) {
+                                    (checkOutRef.current as HTMLInputElement).showPicker()
+                                }
+                            }}
+                        >
                             <BookingIcons className="w-7 h-7 text-(--status-refund)" name="check_out" />
-                            <span>22 November 2025</span>
+                            <span>{GetLabelDate(new Date(bookingDate.checkOut))}</span>
                         </button>
+                        <input
+                            className="absolute top-0 left-0 opacity-0"
+                            type="date"
+                            onChange={(e) => setBookingDate(prev => {
+                                return {
+                                    ...prev,
+                                    ...{
+                                        checkOut: new Date(e.target.value).getTime()
+                                    }
+                                }
+                            })}
+                            value={(new Date(bookingDate.checkOut)).toISOString().split("T")[0]}
+                            ref={checkOutRef}
+                        />
                     </div>
-                    <div className="flex flex-col gap-1.5">
+                    <div className="flex flex-col gap-1.5 relative">
                         <h4 className="font-bold">Tamu</h4>
-                        <button className="w-max p-2 flex items-center gap-1 border-2 border-(--status-refund) rounded-lg cursor-pointer">
+                        <button className="w-max p-2 flex items-center gap-1 border-2 border-(--status-refund) rounded-lg cursor-pointer"
+                            onClick={() => setShowPopUp(prev => {
+                                return {
+                                    ...prev,
+                                    ...{
+                                        guests: !prev.guests,
+                                        rooms: false
+                                    }
+                                }
+                            })}
+                        >
                             <BookingIcons className="w-7 h-7 text-(--status-refund)" name="adult" />
-                            <span>2 Dewasa, 1 Anak - Anak</span>
+                            <span>{bookingDate.guests.adults} Dewasa, {bookingDate.guests.childrens} Anak - Anak</span>
                         </button>
+                        <div className={`w-full min-h-3 p-2 ${showPopUp.booking && showPopUp.guests ? "flex" : "hidden"} flex-col gap-2.5 bg-background border-2 border-(--status-refund) rounded-lg absolute top-20 left-0 z-10`}>
+
+                            <div className="flex flex-col gap-1.5">
+                                <label htmlFor="adults" className="text-sm text-start">Dewasa</label>
+                                <div className="flex justify-center items-center gap-2.5">
+                                    <div className="p-1 h-7 flex justify-center items-center rounded-lg border-2 border-(--status-refund)">
+                                        <BookingIcons
+                                            name="adult"
+                                            className="w-4 h-4 text-(--status-refund)"
+                                        />
+                                    </div>
+                                    <input type="number" min={1}
+                                        className="w-full h-7 p-0.5 px-1 border-2 border-(--status-refund) rounded-lg outline-none" id="adults"
+                                        placeholder=""
+                                        aria-describedby="Masukkan total orang dewasa, adults, tamu"
+                                        onChange={(e) => setBookingDate(prev => {
+                                            return {
+                                                ...prev,
+                                                ...{
+                                                    guests: {
+                                                        adults: Number(e.target.value) ? Number(e.target.value) : 1,
+                                                        childrens: bookingDate.guests.childrens
+                                                    }
+                                                }
+                                            }
+                                        })}
+                                        value={bookingDate.guests.adults}
+                                    />
+                                </div>
+                            </div>
+
+                            <div className="flex flex-col gap-1.5 relative">
+                                <label htmlFor="childrens" className="text-sm text-start">Anak - Anak</label>
+                                <div className="flex justify-center items-center gap-2.5">
+                                    <div className="p-1 h-7 flex justify-center items-center rounded-lg border-2 border-(--status-refund)">
+                                        <BookingIcons
+                                            name="adult"
+                                            className="w-4 h-4 text-(--status-refund)"
+                                        />
+                                    </div>
+                                    <input type="number" min={1}
+                                        className="w-full h-7 p-0.5 px-1 border-2 border-(--status-refund) rounded-lg outline-none" id="childrens"
+                                        placeholder=""
+                                        aria-describedby="Masukkan total Anak - Anak, childrens, tamu"
+                                        onChange={(e) => setBookingDate(prev => {
+                                            return {
+                                                ...prev, ...{
+                                                    guests: {
+                                                        childrens: Number(e.target.value),
+                                                        adults: bookingDate.guests.adults
+                                                    }
+                                                }
+                                            }
+                                        })}
+                                        value={bookingDate.guests.childrens}
+                                    />
+                                </div>
+                            </div>
+
+                        </div>
                     </div>
-                    <div className="flex flex-col gap-1.5">
+                    <div className="flex flex-col gap-1.5 relative">
                         <h4 className="font-bold">Kamar</h4>
-                        <button className="w-max p-2 flex items-center gap-1 border-2 border-(--status-refund) rounded-lg cursor-pointer">
+                        <button className="w-max p-2 flex items-center gap-1 border-2 border-(--status-refund) rounded-lg cursor-pointer"
+                            onClick={() => setShowPopUp(prev => {
+                                return {
+                                    ...prev,
+                                    ...{
+                                        rooms: !prev.rooms,
+                                        guests: false
+                                    }
+                                }
+                            })}
+                        >
                             <BookingIcons className="w-7 h-7 text-(--status-refund)" name="room" />
-                            <span>2 Kamar</span>
+                            <span>{bookingDate.totalRooms} Kamar</span>
                         </button>
+                        <div className={`w-full min-h-3 p-2 ${showPopUp.booking && showPopUp.rooms ? "flex" : "hidden"} flex-col gap-2.5 bg-background border-2 border-(--status-refund) rounded-lg absolute top-20 left-0 z-10`}>
+
+                            <div className="flex flex-col gap-1.5">
+                                <label htmlFor="adults" className="text-sm text-start">Total Kamar</label>
+                                <div className="flex justify-center items-center gap-2.5">
+                                    <div className="p-1 h-7 flex justify-center items-center rounded-lg border-2 border-(--status-refund)">
+                                        <BookingIcons
+                                            name="room"
+                                            className="w-4 h-4 text-(--status-refund)"
+                                        />
+                                    </div>
+                                    <input type="number" min={1}
+                                        className="w-full h-7 p-0.5 px-1 border-2 border-(--status-refund) rounded-lg outline-none" id="adults"
+                                        placeholder=""
+                                        aria-describedby="Total Kamar, Kamar, kamar yang akan digunakan"
+                                        onChange={(e) => setBookingDate(prev => {
+                                            return {
+                                                ...prev,
+                                                ...{
+                                                    totalRooms: Number(e.target.value) ? Number(e.target.value) : 1
+                                                }
+                                            }
+                                        })}
+                                        value={bookingDate.totalRooms}
+                                    />
+                                </div>
+                            </div>
+                        </div>
                     </div>
-                    <button className="p-2.5 bg-(--status-refund) text-background font-bold rounded-lg cursor-pointer">Simpan Perubahan</button>
+                    <button className="p-2.5 bg-(--status-refund) text-background font-bold rounded-lg cursor-pointer"
+                        onClick={() => fetchDetailHotel()}
+                    >Simpan Perubahan</button>
                 </div>}
                 <button className="w-max p-2 bg-white border-3 border-(--status-refund) rounded-lg rounded-t-none absolute -bottom-10.25 -left-[2.5px] cursor-pointer"
                     onClick={() => {
@@ -250,12 +433,12 @@ export default function DetailHotel() {
                         <h2 className="font-bold text-xl">Ringkasan Pemesanan Hotel</h2>
                         <div className="flex gap-2.5 items-center">
                             <div className="flex justify-between items-center gap-4 bg-(--status-refund) rounded-lg p-2">
-                                <div className="flex items-center gap-0.5">
-                                    <span className="text-xs font-bold text-background">Sehari</span>
+                                {totalNights - 1 ? <div className="flex items-center gap-0.5">
+                                    <span className="text-xs font-bold text-background">{totalNights ? `${totalNights} Hari` : "Sehari"}</span>
                                     <BookingIcons className="w-4 h-4 text-(--b4)" name="sun" />
-                                </div>
+                                </div> : <></>}
                                 <div className="flex items-center gap-0.5">
-                                    <span className="text-xs font-bold text-background">2 Malam</span>
+                                    <span className="text-xs font-bold text-background">{totalNights ? `${totalNights} Malam` : "Semalam"}</span>
                                     <BookingIcons className="w-4 h-4 text-(--status-wait)" name="moon" />
                                 </div>
                             </div>
@@ -277,80 +460,158 @@ export default function DetailHotel() {
                         <h2 className="font-bold text-lg">Wah, Kamu Sudah Memesan 3 Unit Kamar Dari 2 Tipe Kamar</h2>
                         <div className="max-h-full flex flex-col gap-2.5">
                             {/* hotel-card-summary-order */}
-                            <div className="flex gap-2.5">
-                                <Image
-                                    className="rounded-lg"
-                                    width={300}
-                                    height={200}
-                                    src={"/images/dashboard.png"}
-                                    alt="images"
-                                />
-                                <div className="w-full flex justify-between">
-                                    <div className="flex flex-col gap-2.5">
-                                        <h4 className="font-medium text-lg">Luxury Deluxe Room</h4>
-                                        <div className="grid grid-cols-2 gap-2">
-                                            <div className="flex items-center gap-1">
-                                                <BookingIcons className="w-6 h-6" name="adult" />
-                                                <span className="text-sm">3 Tamu</span>
+                            {orders.map(({ room, quantity }, index) => {
+                                return <div className="flex gap-2.5" key={`order-${index}`}>
+                                    <Image
+                                        className="rounded-lg"
+                                        width={300}
+                                        height={200}
+                                        src={room.image_url}
+                                        alt={`${room.name}-order`}
+                                    />
+                                    <div className="w-full flex justify-between">
+                                        <div className="flex flex-col gap-2.5">
+                                            <h4 className="font-medium text-lg">{room.name}</h4>
+                                            <div className="grid grid-cols-2 gap-2">
+                                                <div className="flex items-center gap-1">
+                                                    <BookingIcons className="w-6 h-6" name="adult" />
+                                                    <span className="text-sm">{room.max_adults} Tamu</span>
+                                                </div>
+                                                <div className="flex items-center gap-1">
+                                                    <HotelIcons className="w-6 h-6" name="room-size" />
+                                                    <span className="text-sm">{room.room_size} M^2</span>
+                                                </div>
+                                                <div className="flex items-center gap-1">
+                                                    {/* selain twin, single bed maka akan masuk ke kategori special bed */}
+                                                    <HotelIcons className="w-6 h-6" name={room.bed_type} />
+                                                    <span className="text-sm">Single Bed</span>
+                                                </div>
                                             </div>
-                                            <div className="flex items-center gap-1">
-                                                <HotelIcons className="w-6 h-6" name="room-size" />
-                                                <span className="text-sm">54 M^2</span>
-                                            </div>
-                                            <div className="flex items-center gap-1">
-                                                {/* selain twin, single bed maka akan masuk ke kategori special bed */}
-                                                <HotelIcons className="w-6 h-6" name="single_bed" />
-                                                <span className="text-sm">Single Bed</span>
+                                            <div className="flex flex-col gap-3">
+                                                <div className="flex items-center gap-2">
+                                                    <ActionIcon className="w-5 h-5" name="success" />
+                                                    <span className="">{room.free_cancel ? "yes" : "noe"}</span>
+                                                </div>
+                                                <div className="flex items-center gap-2">
+                                                    <ActionIcon className="w-5 h-5" name="success" />
+                                                    <span className="">Televesion</span>
+                                                </div>
+                                                <div className="flex items-center gap-2">
+                                                    <ActionIcon className="w-5 h-5" name="success" />
+                                                    <span className="">Televesion</span>
+                                                </div>
+                                                <div className="flex items-center gap-2">
+                                                    <ActionIcon className="w-5 h-5" name="success" />
+                                                    <span className="">Televesion</span>
+                                                </div>
                                             </div>
                                         </div>
-                                        <div className="flex flex-col gap-3">
-                                            <div className="flex items-center gap-2">
-                                                <ActionIcon className="w-5 h-5" name="success" />
-                                                <span className="">Televesion</span>
-                                            </div>
-                                            <div className="flex items-center gap-2">
-                                                <ActionIcon className="w-5 h-5" name="success" />
-                                                <span className="">Televesion</span>
-                                            </div>
-                                            <div className="flex items-center gap-2">
-                                                <ActionIcon className="w-5 h-5" name="success" />
-                                                <span className="">Televesion</span>
-                                            </div>
-                                            <div className="flex items-center gap-2">
-                                                <ActionIcon className="w-5 h-5" name="success" />
-                                                <span className="">Televesion</span>
+                                        <div className="flex flex-col justify-between items-end">
+                                            <span className="text-(--status-refund)">{totalRoomsLabel(room.total_rooms)}</span>
+                                            <div className="flex flex-col items-end gap-2.5">
+                                                <span className="text-(--status-refund)">{quantity}x Kamar</span>
+                                                <span className="line-through">{convertNumberIntoIDR(Number(room.default_price))}/Malam</span>
+                                                <span className="text-(--status-refund) text-lg font-bold">{getCurrentPriceLabel(Number(room.default_price), Number(room.minimum_price))}/Malam</span>
+                                                <div className="flex items-center gap-2.5">
+                                                    <button className="flex justify-center items-center p-1 bg-(--status-refund) rounded-lg cursor-pointer"
+                                                        onClick={() => {
+                                                            const newOrders = orders.map(r => {
+                                                                if (r.room.id == room.id) {
+                                                                    const qty = r.quantity + 1
+                                                                    if (qty > Number(room.total_rooms)) {
+                                                                        alert(`Kamu tidak bisa memesan kamar lebih besar dari ${room.total_rooms}`)
+                                                                    } else {
+                                                                        r.quantity = qty
+                                                                    }
+                                                                }
+                                                                return r
+                                                            })
+                                                            setOrders(newOrders as OrderRoom[])
+                                                        }}
+                                                    >
+                                                        <ActionIcon className="w-6 h-6 text-background" name="arrow-up" />
+                                                    </button>
+                                                    <input
+                                                        className="w-10 p-1 text-center font-bold text-(--status-refund) border-2 border-(--status-refund) outline-none rounded-lg"
+                                                        type="number"
+                                                        inputMode="numeric"
+                                                        minLength={1}
+                                                        maxLength={2}
+                                                        value={quantity}
+                                                        onChange={(e) => {
+                                                            try {
+                                                                const qty = Number(e.target.value) ?? 1
+                                                                const newOrders = orders.map(r => {
+                                                                    if (r.room.id == room.id) {
+                                                                        if (qty <= 0) {
+                                                                            return null
+                                                                        } else {
+                                                                            r.quantity = qty
+                                                                        }
+                                                                    }
+                                                                    return r
+                                                                }).filter(r => r)
+                                                                setOrders(newOrders as OrderRoom[])
+                                                            } catch {
+                                                                setOrders(prev => prev)
+                                                            }
+                                                        }}
+                                                    />
+                                                    <button className="flex justify-center items-center p-1 bg-(--status-refund) rounded-lg cursor-pointer"
+                                                        onClick={() => {
+                                                            const newOrders = orders.map(r => {
+                                                                if (r.room.id == room.id) {
+                                                                    const qty = r.quantity - 1
+                                                                    if (qty <= 0) {
+                                                                        return null
+                                                                    } else {
+                                                                        r.quantity = qty
+                                                                    }
+                                                                }
+                                                                return r
+                                                            }).filter(r => r)
+                                                            setOrders(newOrders as OrderRoom[])
+                                                        }}
+                                                    >
+                                                        <ActionIcon className="w-6 h-6 text-background" name="arrow-down" />
+                                                    </button>
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
-                                    <div className="flex flex-col justify-between items-end">
-                                        <span className="text-(--status-refund)">Kamar Terakhir</span>
-                                        <div className="flex flex-col items-end gap-2.5">
-                                            <span className="text-(--status-refund)">1x Kamar</span>
-                                            <span className="line-through">Rp. 1.000.000,00/Malam</span>
-                                            <span className="text-(--status-refund) text-lg font-bold">Rp. 900.000,00/Malam</span>
-                                            <div className="flex items-center gap-2.5">
-                                                <button className="flex justify-center items-center p-1 bg-(--status-refund) rounded-lg cursor-pointer">
-                                                    <ActionIcon className="w-6 h-6 text-background" name="arrow-up" />
-                                                </button>
-                                                <input
-                                                    className="w-10 p-1 text-center font-bold text-(--status-refund) border-2 border-(--status-refund) outline-none rounded-lg"
-                                                    type="text"
-                                                    inputMode="numeric"
-                                                    minLength={1}
-                                                    maxLength={2}
-                                                />
-                                                <button className="flex justify-center items-center p-1 bg-(--status-refund) rounded-lg cursor-pointer">
-                                                    <ActionIcon className="w-6 h-6 text-background" name="arrow-up" />
-                                                </button>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
 
-                            </div>
+                                </div>
+                            })}
                         </div>
                     </div>
-                    <div className="w-full min-h-10 bg-red-200 flex sticky bottom-0 left-0"></div>
+                    <div className="w-full p-4 bg-background flex justify-between items-end sticky bottom-0 left-0">
+                        <div className="flex flex-col justify-end gap-1">
+                            <span className="text-(--status-refund)">{orders.reduce((acc, cur) => {
+                                return acc + cur.quantity
+                            }, 0)}x Kamar</span>
+                            <span className="text-sm line-through">{convertNumberIntoIDR(orders.reduce((acc, cur) => {
+                                return acc + Number(cur.room.default_price) * cur.quantity
+                            }, 0))}</span>
+                            <span className="text-lg font-bold text-(--status-refund)">{
+                                getCurrentPriceLabel(orders.reduce((acc, cur) => {
+                                    return acc + Number(cur.room.default_price) * cur.quantity
+                                }, 0), orders.reduce((acc, cur) => {
+                                    return acc + Number(cur.room.minimum_price) * cur.quantity
+                                }, 0))
+                            }</span>
+                            <div className="flex items-center gap-1">
+                                <ActionIcon className="w-6 h-6 text-(--status-refund)" name="information" />
+                                <span className="text-sm">Belum Termasuk Pajak Dan Biaya Tambahan</span>
+                            </div>
+                        </div>
+                        <button className="h-15 p-3 text-background font-bold bg-(--status-refund) rounded-sm cursor-pointer"
+                            onClick={() => {
+                                bookingContext.saveBooking(bookingDate)
+                                bookingContext.saveOrders(orders)
+                                router.push("/transactions/create")
+                            }}
+                        >Pesan Sekarang</button>
+                    </div>
                 </div>
             </div> : <></>}
 
@@ -443,7 +704,7 @@ export default function DetailHotel() {
                 </div>
             </div>}
 
-            {dataHotel.type_rooms.length && <div className="flex flex-col gap-5" id="rooms">
+            {dataHotel.type_rooms?.length ? <div className="flex flex-col gap-5" id="rooms">
                 <h2 className="font-bold text-xl">Terdapat {dataHotel.type_rooms.length} Tipe Kamar Yang Sesuai</h2>
                 <div className="flex gap-6">
                     {dataHotel.type_rooms.map((room, index) => {
@@ -493,23 +754,25 @@ export default function DetailHotel() {
                                     <button className="bg-(--status-refund) text-background p-2 px-3 rounded-sm cursor-pointer"
                                         onClick={() => {
                                             const isFound = orders.find((order) => order.room.id == room.id)
-
                                             if (isFound) {
-                                                const newQty = isFound.quantity++
-                                                if (newQty > room.total_rooms) {
-                                                    return alert(`Kamar Ingin Memesan ${newQty} Kamar? Namun Kamar Hanya Tersisa ${room.total_rooms} Yang Tersedia`)
+                                                const newQty = isFound.quantity + 1
+                                                if (newQty > Number(room.total_rooms)) {
+                                                    alert(`Kamar Ingin Memesan ${newQty} Kamar? Namun Kamar Hanya Tersisa ${room.total_rooms} Yang Tersedia`)
+                                                    return
                                                 }
                                                 isFound.quantity = newQty
                                                 setOrders(prev => {
-                                                    return [
-                                                        ...prev,
-                                                        ...[isFound]
-                                                    ]
+                                                    return prev.map(order => {
+                                                        order.quantity = newQty
+                                                        return order
+                                                    })
                                                 })
                                             } else {
                                                 const order = {
                                                     room: room,
-                                                    quantity: 1
+                                                    quantity: 1,
+                                                    checkIn: bookingDate.checkIn,
+                                                    checkOut: bookingDate.checkOut,
                                                 } as OrderRoom
                                                 setOrders(prev => {
                                                     return [
@@ -518,6 +781,7 @@ export default function DetailHotel() {
                                                     ]
                                                 })
                                             }
+                                            setShowAlert(true)
                                         }}
                                     >Pilih Kamar</button>
                                 </div>
@@ -609,7 +873,41 @@ export default function DetailHotel() {
                             </div>
                         </div>
                         <div className="w-full min-h-30 p-3 bg-background flex justify-between items-center sticky bottom-0 left-0">
-                            <button className="min-w-max h-15 font-bold text-background bg-(--status-refund) px-2 rounded-sm cursor-pointer">Pesan Kamar</button>
+                            <button className="min-w-max h-15 font-bold text-background bg-(--status-refund) px-2 rounded-sm cursor-pointer"
+                                onClick={() => {
+                                    const isFound = orders.find((order) => order.room.id == currentRoom.id)
+                                    if (isFound) {
+                                        const newQty = isFound.quantity + 1
+                                        if (newQty > Number(currentRoom.total_rooms)) {
+                                            alert(`Kamar Ingin Memesan ${newQty} Kamar? Namun Kamar Hanya Tersisa ${currentRoom.total_rooms} Yang Tersedia`)
+                                            return
+                                        }
+                                        isFound.quantity = newQty
+                                        setOrders(prev => {
+                                            return prev.map(order => {
+                                                order.quantity = newQty
+                                                return order
+                                            })
+                                        })
+                                    } else {
+                                        const order = {
+                                            room: currentRoom,
+                                            quantity: 1,
+                                            checkIn: bookingDate.checkIn,
+                                            checkOut: bookingDate.checkOut,
+                                        } as OrderRoom
+                                        setOrders(prev => {
+                                            return [
+                                                ...prev,
+                                                ...[order]
+                                            ]
+                                        })
+                                    }
+                                    setCurrentRoom(null);
+                                    setShowAlert(true)
+                                }
+                                }
+                            >Pesan Kamar</button>
                             <div className="flex flex-col h-full justify-end text-end">
                                 <span className="text-(--status-refund) font-bold">{totalRoomsLabel(currentRoom.total_rooms)}</span>
                                 {Number(currentRoom.minimum_price) != 0 && <span className="line-through">{convertNumberIntoIDR(Number(currentRoom.default_price))} /Malam</span>}
@@ -618,6 +916,8 @@ export default function DetailHotel() {
                         </div>
                     </div>
                 </div>}
+            </div> : <div className="flex flex-col gap-2.5">
+                <h2 className="text-2xl">Tidak Ada Kamar Yang Tersedia...</h2>
             </div>}
 
             <div className="flex flex-col gap-4" id="near-facility">
@@ -784,10 +1084,11 @@ export default function DetailHotel() {
 
             </div>
 
-        </div>}
+        </div>
+        }
 
 
-    </div>
+    </div >
 }
 
 function ShortcutInformationHotels() {

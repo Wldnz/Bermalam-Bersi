@@ -7,7 +7,6 @@ import RecommendationPopulerDestination from "@/components/FindHotel/Recommendat
 import SearchHotelBar from "@/components/FindHotel/SearchHotelsBar";
 import ActionIcon from "@/components/Icons/Action";
 import HotelIcons from "@/components/Icons/Hotel";
-import TransactionIcons from "@/components/Icons/Transactions";
 import Navigation from "@/components/Navigation";
 import Hotel from "@/models/Hotel";
 import isDataHasBeenUpdate from "@/utils/CheckIsBookingDataIsUpdated";
