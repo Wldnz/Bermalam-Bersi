@@ -13,10 +13,11 @@ import Image from "next/image"
 import { useRouter } from "next/navigation"
 import { useEffect, useState } from "react"
 
-interface EstimatePrice{
-    TotalPrice : number 
-    TaxCost : number
-    DiscountPrice : number
+interface EstimatePrice {
+    total_price: number
+    total_tax_cost: number
+    total_discount: number
+    level_transaction: number
 }
 
 
@@ -29,7 +30,7 @@ interface UserVoucher {
 
 interface RequestGuestRoom {
     full_name: string
-    phone_country_code: number
+    phone_country_code: string
     phone: string
     hasWhastApp: boolean
     note: string
@@ -45,6 +46,8 @@ interface RequestOrderRooms {
 
 interface RequestTransaction {
     fullname: string
+    first_name: string
+    last_name: string
     email: string
     phone_country_code: number
     phone: string
@@ -62,8 +65,9 @@ interface RequestTransaction {
     category_booking: "full" | "dp"
     simulation: true,
     currency: "IDR",
-    language: "ID"
-    is_calculation_price : boolean
+    language: "ID",
+    total_price: number // ini gak bakal ke pake di be!
+    is_calculation_price: boolean,
 }
 
 export default function CreateTransactionPage({ }) {
@@ -80,7 +84,7 @@ export default function CreateTransactionPage({ }) {
 
     const [vouchers, setVouchers] = useState<UserVoucher[] | []>([])
 
-    const [ estimatePrice, setEstimatePrice ] = useState<EstimatePrice>()
+    const [estimatePrice, setEstimatePrice] = useState<EstimatePrice>()
 
 
     useEffect(() => {
@@ -95,20 +99,27 @@ export default function CreateTransactionPage({ }) {
                         hasWhastApp: false,
                         note: "",
                         phone: "",
-                        phone_country_code: 62,
+                        phone_country_code: "62",
                         dataIsSameAsBefore: false
                     } as RequestGuestRoom),
                     quantity: order.quantity,
                 } as RequestOrderRooms
             })
+
+            const totalPrice = bookingContext.orders.reduce((acc, currentValue) => {
+                return acc + (Number(currentValue.room.default_price) * currentValue.quantity)
+            }, 0)
+
             setTransactionData({
-                fullname: user?.first_name ?? "",
+                fullname: user ? user.first_name + user.last_name : "",
+                first_name: user?.first_name ?? "",
+                last_name: user?.last_name ?? "",
                 email: user?.email ?? "",
                 phone: "",
-                phone_country_code: 0,
+                phone_country_code: 62,
                 isDataUpadted: false,
                 check_in_at: bookingContext.bookingData.checkIn,
-                check_out_at: bookingContext.bookingData.checkIn,
+                check_out_at: bookingContext.bookingData.checkOut,
                 adults: bookingContext.bookingData.guests.adults,
                 childrens: bookingContext.bookingData.guests.childrens,
                 rooms: rooms,
@@ -117,7 +128,8 @@ export default function CreateTransactionPage({ }) {
                 language: "ID",
                 simulation: true,
                 total_rooms: bookingContext.bookingData.totalRooms,
-                is_calculation_price : true,
+                total_price: totalPrice,
+                is_calculation_price: true,
                 // voucher : {})
             }
             )
@@ -139,32 +151,32 @@ export default function CreateTransactionPage({ }) {
 
     useEffect(() => {
 
-        const fetchEstimatePrice = async() => {
-            try{
+        const fetchEstimatePrice = async () => {
+            try {
                 const { data } = await Api().post("/check-price", transactionData)
                 setEstimatePrice(data.data)
-            }catch{
+            } catch {
                 setEstimatePrice(undefined)
-            }finally{
+            } finally {
                 setTransactionData(prev => {
-                    if(!prev) return prev
+                    if (!prev) return prev
                     return {
                         ...prev,
                         ...{
-                            is_calculation_price : false
+                            is_calculation_price: false
                         }
                     }
                 })
             }
         }
 
-        if(transactionData?.is_calculation_price){
+        if (transactionData?.is_calculation_price) {
             fetchEstimatePrice()
         }
 
     }, [transactionData])
 
-    
+
 
 
     if (!bookingContext.bookingData || !bookingContext.orders) {
@@ -174,7 +186,7 @@ export default function CreateTransactionPage({ }) {
 
 
     const checkInDate = new Date(bookingContext.bookingData!.checkIn)
-    const checkOutDate = new Date(bookingContext.bookingData!.checkIn)
+    const checkOutDate = new Date(bookingContext.bookingData!.checkOut)
 
     // fetching credentials seperti nomro telepon, dan pengguna bisa merubah namanya disini... dan merubah nomor teleponnya! dan cari tahu bagaimana gar data dari bookingContext ini ttp ada walaupun di refresh... dan pastikan login mneggunakan googlenya berhasil
 
@@ -182,7 +194,7 @@ export default function CreateTransactionPage({ }) {
         <div className="w-full min-h-dvh flex flex-col gap-10 font-inter">
             <Navigation showNavigation={false} />
 
-            <div className="flex gap-5 justify-between">
+            <form className="flex gap-5 justify-between">
 
                 <div className="w-full flex flex-col gap-10 p-3">
                     <p className="p-2 bg-red-200 font-bold rounded-lg">Pembayaran awal tidak dapat dilakukan pada pemesanan ini, karena salah satu kamar tidak mendukungnya</p>
@@ -193,17 +205,53 @@ export default function CreateTransactionPage({ }) {
                             <span className="text-sm">Data Dibawah Ini yang bertanggung jawab dalam transaksi</span>
                         </div>
 
-                        <div className="flex flex-col gap-2.5">
-                            <div className="flex flex-col gap-0.5">
-                                <label htmlFor="full_name">Nama Lengkap</label>
-                                <span className="text-sm">Masukkan Nama Panjang Anda</span>
+                        <div className="flex items-center gap-2.5">
+                            <div className="w-full flex flex-col gap-2.5">
+                                <div className="flex flex-col gap-0.5">
+                                    <label htmlFor="first_name">Nama Depan</label>
+                                    <span className="text-sm">Masukkan Nama Depan Anda</span>
+                                </div>
+                                <input
+                                    className="text-sm p-3 border-2 border-(--status-refund) outline-none rounded-lg"
+                                    id="first_name" name="first_name"
+                                    type="text"
+                                    value={transactionData?.first_name ?? user?.first_name ?? ""}
+                                    onChange={(e) => setTransactionData(prev => {
+                                        if (!prev) return prev
+                                        return {
+                                            ...prev,
+                                            ...{
+                                                first_name: e.target.value,
+                                                fullname: e.target.value + " " + prev.last_name,
+                                                isDataUpadted : true,
+                                            }
+                                        }
+                                    })}
+                                    placeholder="Masukkan Nama Lengkap Anda" />
                             </div>
-                            <input
-                                className="text-sm p-3 border-2 border-(--status-refund) outline-none rounded-lg"
-                                type="text"
-                                value={transactionData?.fullname ?? user?.first_name}
-                                readOnly
-                                placeholder="Masukkan Nama Lengkap Anda" />
+                            <div className="w-full flex flex-col gap-2.5">
+                                <div className="flex flex-col gap-0.5">
+                                    <label htmlFor="last_name">Nama Belakang</label>
+                                    <span className="text-sm">Masukkan Nama Belakang Anda</span>
+                                </div>
+                                <input
+                                    className="text-sm p-3 border-2 border-(--status-refund) outline-none rounded-lg"
+                                    id="last_name" name="last_name"
+                                    type="text"
+                                    value={transactionData?.last_name ?? user?.last_name ?? ""}
+                                    onChange={(e) => setTransactionData(prev => {
+                                        if (!prev) return prev
+                                        return {
+                                            ...prev,
+                                            ...{
+                                                last_name: e.target.value,
+                                                fullname: prev.first_name + " " + e.target.value,
+                                                isDataUpadted : true,
+                                            }
+                                        }
+                                    })}
+                                    placeholder="Masukkan Nama Lengkap Anda" />
+                            </div>
                         </div>
 
                         <div className="flex justify-between gap-2.5">
@@ -226,11 +274,36 @@ export default function CreateTransactionPage({ }) {
                                     <span className="text-sm">Masukkan Nomor Telepon Anda Yang Masih Aktif</span>
                                 </div>
                                 <div className="flex items-center gap-2.5">
-                                    <select className="w-max h-full border-2 border-(--status-refund) outline-none rounded-lg" name="" id="">
+                                    <select className="w-max h-full border-2 border-(--status-refund) outline-none rounded-lg" name="phone_country_code" id="phone_country_code"
+                                        value={transactionData?.phone_country_code}
+                                        onChange={(e) => setTransactionData(prev => {
+                                            if (!prev) return prev
+                                            return {
+                                                ...prev,
+                                                ...{
+                                                    phone_country_code: Number(e.target.value),
+                                                    isDataUpadted : true,
+                                                }
+                                            }
+                                        })}
+                                    >
                                         <option value="62">+62</option>
                                     </select>
-                                    <input className="w-full text-sm p-3 border-2 border-(--status-refund) outline-none rounded-lg" type="text" inputMode="numeric" placeholder="815454512"
-                                    // value={0}
+                                    <input className="w-full text-sm p-3 border-2 border-(--status-refund) outline-none rounded-lg" 
+                                    id="telp" name="telp"
+                                    type="text" inputMode="numeric" placeholder="815454512"
+                                        required
+                                        value={transactionData?.phone}
+                                        onChange={(e) => setTransactionData(prev => {
+                                            if (!prev) return prev
+                                            return {
+                                                ...prev,
+                                                ...{
+                                                    phone: e.target.value,
+                                                    isDataUpadted : true,
+                                                }
+                                            }
+                                        })}
                                     />
                                 </div>
                             </div>
@@ -265,6 +338,7 @@ export default function CreateTransactionPage({ }) {
                             return <div className="flex flex-col gap-4" key={`${room.name}-${quantity}-${index}`}>
 
                                 <button className={`w-full flex items-center justify-between bg-(--status-refund) text-background p-3 ${showRoom ? "rounded-t-lg" : "rounded-lg"}`}
+                                    type="button"
                                     onClick={() => setShowRoom(prev => !prev)}
                                 >
                                     <h2 className="font-medium text-lg">{`Lengkapi Data Pemesanan Kamar #${index + 1}`}</h2>
@@ -333,6 +407,7 @@ export default function CreateTransactionPage({ }) {
                                         return <div className="flex flex-col gap-5 mt-5" key={`data-tamu-${room.name}-${data_index}`}>
                                             <h2 className="font-medium text-xl">Data Tamu Yang Bertanggung Jawab #{data_index + 1}</h2>
                                             <button className="flex items-center gap-2.5 cursor-pointer"
+                                                type="button"
                                                 onClick={() => setTransactionData(prev => {
                                                     if (!prev) return prev
                                                     return {
@@ -366,54 +441,16 @@ export default function CreateTransactionPage({ }) {
                                                 <div className={`w-5.5 h-5.5 border-3 border-(--status-refund) ${transactionData?.rooms[index].guests[data_index].dataIsSameAsBefore ?? false ? "bg-(--status-refund)" : ""} rounded-lg`}></div>
                                                 <span>Apakah Penanggung Jawab Sama Dengan Kamar Sebelumnya?</span>
                                             </button>
-                                            <div className="flex flex-col gap-5">
-                                                <div className="flex flex-col gap-2">
-                                                    <div className="flex flex-col gap-1">
-                                                        <label className="text-lg font-medium" htmlFor={`full_name-${room.name}-${data_index}`}>Nama Lengkap</label>
-                                                        <span className="text-sm">Masukkan Nama Panjang Anda</span>
-                                                    </div>
-                                                    <input className="text-sm p-3 border-2 border-(--status-refund) outline-none rounded-lg"
-                                                        id={`full_name-${room.name}-${data_index}`}
-                                                        value={transactionData?.rooms[index].guests[data_index].full_name ?? ""}
-                                                        onChange={(e) => setTransactionData(prev => {
-                                                            if (!prev) return prev
-                                                            return {
-                                                                ...prev,
-                                                                ... {
-                                                                    rooms: prev.rooms.map((r) => {
-                                                                        if (r.id_type_room == room.id) {
-                                                                            return {
-                                                                                ...r,
-                                                                                ...{
-                                                                                    guests: r.guests.map((guest, gdi) => {
-                                                                                        if (gdi === data_index) {
-                                                                                            return {
-                                                                                                ...guest,
-                                                                                                ...{
-                                                                                                    full_name: e.target.value
-                                                                                                }
-                                                                                            }
-                                                                                        }
-                                                                                        return guest
-                                                                                    })
-                                                                                }
-                                                                            }
-                                                                        }
-                                                                        return r
-                                                                    })
-                                                                }
-                                                            }
-                                                        })}
-                                                        type="text" placeholder="Masukkan Nama Lengkap Anda" />
-                                                </div>
-                                                <div className="flex flex-col gap-2">
-                                                    <div className="flex flex-col gap-1">
-                                                        <label className="text-lg font-medium" htmlFor={`telephone-${room.name}-${data_index}`}>Nomor Telepon</label>
-                                                        <span className="text-sm">Nomor Telepon yang dapat kami hubungi</span>
-                                                    </div>
-                                                    <div className="flex items-center gap-2.5">
-                                                        <select className="w-max h-full px-2 flex items-center justify-center border-2 border-(--status-refund) outline-none rounded-lg appearance-none"
-                                                            value={transactionData?.rooms[index]?.guests[data_index]?.phone_country_code}
+                                            {!transactionData?.rooms[index].guests[data_index].dataIsSameAsBefore && <div className="flex flex-col gap-5">
+                                                <div className="flex flex-col gap-5">
+                                                    <div className="flex flex-col gap-2">
+                                                        <div className="flex flex-col gap-1">
+                                                            <label className="text-lg font-medium" htmlFor={`full_name-${room.name}-${data_index}`}>Nama Lengkap</label>
+                                                            <span className="text-sm">Masukkan Nama Panjang Anda</span>
+                                                        </div>
+                                                        <input className="text-sm p-3 border-2 border-(--status-refund) outline-none rounded-lg"
+                                                            id={`full_name-${room.name}-${data_index}`}
+                                                            value={transactionData?.rooms[index].guests[data_index].full_name ?? ""}
                                                             onChange={(e) => setTransactionData(prev => {
                                                                 if (!prev) return prev
                                                                 return {
@@ -429,7 +466,114 @@ export default function CreateTransactionPage({ }) {
                                                                                                 return {
                                                                                                     ...guest,
                                                                                                     ...{
-                                                                                                        phone_country_code: Number(e.target.value)
+                                                                                                        full_name: e.target.value
+                                                                                                    }
+                                                                                                }
+                                                                                            }
+                                                                                            return guest
+                                                                                        })
+                                                                                    }
+                                                                                }
+                                                                            }
+                                                                            return r
+                                                                        })
+                                                                    }
+                                                                }
+                                                            })}
+                                                            type="text" placeholder="Masukkan Nama Lengkap Anda" />
+                                                    </div>
+                                                    <div className="flex flex-col gap-2">
+                                                        <div className="flex flex-col gap-1">
+                                                            <label className="text-lg font-medium" htmlFor={`telephone-${room.name}-${data_index}`}>Nomor Telepon</label>
+                                                            <span className="text-sm">Nomor Telepon yang dapat kami hubungi</span>
+                                                        </div>
+                                                        <div className="flex items-center gap-2.5">
+                                                            <select className="w-max h-full px-2 flex items-center justify-center border-2 border-(--status-refund) outline-none rounded-lg appearance-none"
+                                                                value={transactionData?.rooms[index]?.guests[data_index]?.phone_country_code}
+                                                                onChange={(e) => setTransactionData(prev => {
+                                                                    if (!prev) return prev
+                                                                    return {
+                                                                        ...prev,
+                                                                        ... {
+                                                                            rooms: prev.rooms.map((r) => {
+                                                                                if (r.id_type_room == room.id) {
+                                                                                    return {
+                                                                                        ...r,
+                                                                                        ...{
+                                                                                            guests: r.guests.map((guest, gdi) => {
+                                                                                                if (gdi === data_index) {
+                                                                                                    return {
+                                                                                                        ...guest,
+                                                                                                        ...{
+                                                                                                            phone_country_code: e.target.value
+                                                                                                        }
+                                                                                                    }
+                                                                                                }
+                                                                                                return guest
+                                                                                            })
+                                                                                        }
+                                                                                    }
+                                                                                }
+                                                                                return r
+                                                                            })
+                                                                        }
+                                                                    }
+                                                                })}
+                                                            >
+                                                                <option value="62">+62</option>
+                                                            </select>
+                                                            <input className="w-full text-sm p-3 border-2 border-(--status-refund) outline-none rounded-lg"
+                                                                id={`telephone-${room.name}-${data_index}`}
+                                                                value={transactionData?.rooms[index]?.guests[data_index]?.phone ?? ""}
+                                                                onChange={(e) => setTransactionData(prev => {
+                                                                    if (!prev) return prev
+                                                                    return {
+                                                                        ...prev,
+                                                                        ... {
+                                                                            rooms: prev.rooms.map((r) => {
+                                                                                if (r.id_type_room == room.id) {
+                                                                                    return {
+                                                                                        ...r,
+                                                                                        ...{
+                                                                                            guests: r.guests.map((guest, gdi) => {
+                                                                                                if (gdi === data_index) {
+                                                                                                    return {
+                                                                                                        ...guest,
+                                                                                                        ...{
+                                                                                                            phone: e.target.value
+                                                                                                        }
+                                                                                                    }
+                                                                                                }
+                                                                                                return guest
+                                                                                            })
+                                                                                        }
+                                                                                    }
+                                                                                }
+                                                                                return r
+                                                                            })
+                                                                        }
+                                                                    }
+                                                                })}
+                                                                type="text" placeholder="8128121281" />
+                                                        </div>
+                                                        <button className="flex items-center gap-2.5 mt-2 cursor-pointer"
+                                                            type="button"
+                                                            onClick={() => setTransactionData(prev => {
+                                                                if (!prev) return prev
+                                                                return {
+                                                                    ...prev,
+                                                                    ... {
+                                                                        rooms: prev.rooms.map((r) => {
+                                                                            if (r.id_type_room == room.id) {
+                                                                                return {
+                                                                                    ...r,
+                                                                                    ...{
+                                                                                        guests: r.guests.map((guest, gdi) => {
+                                                                                            if (gdi === data_index) {
+                                                                                                return {
+                                                                                                    ...guest,
+                                                                                                    ...{
+                                                                                                        hasWhastApp: !guest.hasWhastApp
                                                                                                     }
                                                                                                 }
                                                                                             }
@@ -444,85 +588,20 @@ export default function CreateTransactionPage({ }) {
                                                                 }
                                                             })}
                                                         >
-                                                            <option value="62">+62</option>
-                                                        </select>
-                                                        <input className="w-full text-sm p-3 border-2 border-(--status-refund) outline-none rounded-lg"
-                                                            id={`telephone-${room.name}-${data_index}`}
-                                                            value={transactionData?.rooms[index]?.guests[data_index]?.phone ?? ""}
-                                                            onChange={(e) => setTransactionData(prev => {
-                                                                if (!prev) return prev
-                                                                return {
-                                                                    ...prev,
-                                                                    ... {
-                                                                        rooms: prev.rooms.map((r) => {
-                                                                            if (r.id_type_room == room.id) {
-                                                                                return {
-                                                                                    ...r,
-                                                                                    ...{
-                                                                                        guests: r.guests.map((guest, gdi) => {
-                                                                                            if (gdi === data_index) {
-                                                                                                return {
-                                                                                                    ...guest,
-                                                                                                    ...{
-                                                                                                        phone: e.target.value
-                                                                                                    }
-                                                                                                }
-                                                                                            }
-                                                                                            return guest
-                                                                                        })
-                                                                                    }
-                                                                                }
-                                                                            }
-                                                                            return r
-                                                                        })
-                                                                    }
-                                                                }
-                                                            })}
-                                                            type="text" placeholder="8128121281" />
+                                                            <div className={`w-6 h-6 border-2 border-(--status-refund) ${transactionData?.rooms[index]?.guests[data_index]?.hasWhastApp ?? false ? "bg-(--status-refund)" : ""} rounded-lg`}></div>
+                                                            <span className="">Apakah nomer telepon terdaftar pada WhastApp?</span>
+                                                        </button>
                                                     </div>
-                                                    <button className="flex items-center gap-2.5 mt-2 cursor-pointer"
-                                                        onClick={() => setTransactionData(prev => {
-                                                            if (!prev) return prev
-                                                            return {
-                                                                ...prev,
-                                                                ... {
-                                                                    rooms: prev.rooms.map((r) => {
-                                                                        if (r.id_type_room == room.id) {
-                                                                            return {
-                                                                                ...r,
-                                                                                ...{
-                                                                                    guests: r.guests.map((guest, gdi) => {
-                                                                                        if (gdi === data_index) {
-                                                                                            return {
-                                                                                                ...guest,
-                                                                                                ...{
-                                                                                                    hasWhastApp: !guest.hasWhastApp
-                                                                                                }
-                                                                                            }
-                                                                                        }
-                                                                                        return guest
-                                                                                    })
-                                                                                }
-                                                                            }
-                                                                        }
-                                                                        return r
-                                                                    })
-                                                                }
-                                                            }
-                                                        })}
-                                                    >
-                                                        <div className={`w-6 h-6 border-2 border-(--status-refund) ${transactionData?.rooms[index]?.guests[data_index]?.hasWhastApp ?? false ? "bg-(--status-refund)" : ""} rounded-lg`}></div>
-                                                        <span className="">Apakah nomer telepon terdaftar pada WhastApp?</span>
-                                                    </button>
                                                 </div>
-                                            </div>
+                                            </div>}
                                             <details className="group">
                                                 <summary className="p-3 flex justify-between items-center bg-(--status-refund) rounded-lg cursor-pointer">
                                                     <div className="flex items-center gap-1.5">
                                                         <ActionIcon className="w-6 h-6 text-background" name="information" />
                                                         <span className="text-background font-medium">Kamu Memiliki Permintaan Tambahan?</span>
                                                     </div>
-                                                    <ActionIcon className="w-7 h-7 text-background" name="negative" />
+                                                    <ActionIcon className="w-7 h-7 text-background hidden group-open:block" name="negative" />
+                                                    <ActionIcon className="w-7 h-7 text-background group-open:hidden    " name="positive" />
                                                 </summary>
                                                 <div className="flex flex-col gap-2.5 p-3 bg-background">
                                                     <label className="font-medium" htmlFor={`note-${room.name}-${data_index}`}>Kamu Ada Permintaan Tambahan?</label>
@@ -574,6 +653,7 @@ export default function CreateTransactionPage({ }) {
 
                 {/* summary orders */}
 
+
                 <div className="w-120 h-max p-3 flex flex-col gap-5 bg-background rounded-xl sticky top-0 right-0">
                     <h4 className="">Ringkasan Pemesanan (Bayar Penuh)</h4>
                     {/* summary date */}
@@ -599,34 +679,32 @@ export default function CreateTransactionPage({ }) {
                                 <span className="text-sm">{bookingContext.bookingData?.totalRooms} Kamar</span>
                             </div>
                         </div>
+                        {/* <span className="w-max h-max p-2 bg-(--status-refund) text-background text-sm rounded-lg">{ estimatePrice?.level_transaction ?? "Semalam" }</span> */}
                     </div>
                     <div className="w-full flex flex-col gap-3">
                         <div className="w-full flex items-center justify-between font-medium">
                             <span className="text-sm">Biaya Harga Kamar (x{bookingContext.bookingData?.totalRooms})</span>
-                            <span className="text-sm">{convertNumberIntoIDR(
-                                bookingContext.orders.reduce((acc, currentValue) => {
-                                    return acc + (Number(currentValue.room.default_price) * currentValue.quantity)
-                                }, 0))}</span>
+                            <span className="text-sm">{convertNumberIntoIDR(transactionData?.total_price ?? 0)}</span>
                         </div>
-                        {/* <div className="w-full flex items-center justify-between font-medium">
-                            <span className="text-sm">Potongan Biaya (x{bookingContext.bookingData?.totalRooms})</span>
-                            <span className="text-sm">Rp. 300.000,00</span>
-                        </div> */}
                         <div className="w-full flex items-center justify-between font-medium">
-                            <span className="text-sm">Potongan Biaya</span>
-                            <span className="text-sm">{ convertNumberIntoIDR(estimatePrice?.DiscountPrice ?? 0) }</span>
+                            <span className="text-sm">Potongan Biaya ({estimatePrice?.level_transaction})</span>
+                            <span className="text-sm">{convertNumberIntoIDR(estimatePrice && transactionData ? transactionData.total_price - estimatePrice.total_price : 0)}</span>
+                        </div>
+                        <div className="w-full flex items-center justify-between font-medium">
+                            <span className="text-sm">Potongan Biaya (Kupon)</span>
+                            <span className="text-sm">{convertNumberIntoIDR(estimatePrice?.total_discount ?? 0)}</span>
                         </div>
                         <div className="w-full flex items-center justify-between font-medium">
                             <span className="text-sm">Total Biaya Kamar (x{bookingContext.bookingData?.totalRooms})</span>
-                            <span className="text-sm">Rp. 5.700.000,00</span>
+                            <span className="text-sm">{convertNumberIntoIDR(estimatePrice?.total_price ?? 0)}</span>
                         </div>
                         <div className="w-full flex items-center justify-between font-medium">
                             <span className="text-sm">Biaya Langganan Aplikasi</span>
-                            <span className="text-sm">Rp. 3.000,00</span>
+                            <span className="text-sm">{convertNumberIntoIDR(estimatePrice?.total_tax_cost ?? 0)}</span>
                         </div>
                         <div className="w-full flex items-center justify-between font-medium">
                             <span className="text-sm">Total Harga</span>
-                            <span className="text-sm">Rp. 5.700.000,00</span>
+                            <span className="text-sm">{convertNumberIntoIDR(estimatePrice ? estimatePrice.total_price + estimatePrice.total_tax_cost : 0)}</span>
                         </div>
                     </div>
                     <div className="flex items-center gap-4">
@@ -635,18 +713,18 @@ export default function CreateTransactionPage({ }) {
                             name="" id=""
                             onChange={(e) => {
                                 setTransactionData(prev => {
-                                if (!prev) return prev
-                                return {
-                                    ...prev,
-                                    ...{
-                                        voucher : e.target.value? {
-                                            id_user_voucher : Number(e.target.value),
-                                            name : e.target.textContent
-                                        } : null,
-                                        is_calculation_price : true
+                                    if (!prev) return prev
+                                    return {
+                                        ...prev,
+                                        ...{
+                                            voucher: e.target.value ? {
+                                                id_user_voucher: Number(e.target.value),
+                                                name: e.target.textContent
+                                            } : null,
+                                            is_calculation_price: true
+                                        }
                                     }
-                                }
-                            })
+                                })
                             }}
                         >
                             <option value=""></option>
@@ -655,6 +733,7 @@ export default function CreateTransactionPage({ }) {
                             })}
                         </select>
                         <button className="w-12 h-10 p-2 flex justify-center items-center border-2 border-(--status-refund) rounded-lg cursor-pointer"
+                            type="button"
                         >
                             <TransactionIcons className="w-8 h-8 text-(--status-refund)" name="voucher" />
                         </button>
@@ -672,7 +751,7 @@ export default function CreateTransactionPage({ }) {
                     >Buat Transaksi</button>
                 </div>
 
-            </div>
+            </form>
 
         </div>
     )

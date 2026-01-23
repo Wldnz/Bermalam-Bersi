@@ -434,7 +434,7 @@ export default function DetailHotel() {
                         <div className="flex gap-2.5 items-center">
                             <div className="flex justify-between items-center gap-4 bg-(--status-refund) rounded-lg p-2">
                                 {totalNights - 1 ? <div className="flex items-center gap-0.5">
-                                    <span className="text-xs font-bold text-background">{totalNights ? `${totalNights} Hari` : "Sehari"}</span>
+                                    <span className="text-xs font-bold text-background">{totalNights - 1 ? `${totalNights - 1} Hari` : "Sehari"}</span>
                                     <BookingIcons className="w-4 h-4 text-(--b4)" name="sun" />
                                 </div> : <></>}
                                 <div className="flex items-center gap-0.5">
