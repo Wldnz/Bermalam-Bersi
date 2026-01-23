@@ -1,9 +1,11 @@
 "use client"
 import ActionIcon from "@/components/Icons/Action";
+import { useBooking } from "@/context/Booking";
+import { AxiosErrorCustom } from "@/models/Models";
 import Api from "@/utils/Api";
-import { AxiosError } from "axios";
 import Image from "next/image";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 interface LoginData {
@@ -12,18 +14,11 @@ interface LoginData {
     is_remember: boolean
 }
 
-interface AxiosErrorCustom{
-    status : number
-    response : {
-        data : {
-            message : string
-            error : string
-            status_code : number
-        }
-    }
-}
+
 
 export default function AuthPage() {
+
+    const router = useRouter()
 
     const [showPassword, setShowPassword] = useState<boolean>(false)
 
@@ -36,12 +31,23 @@ export default function AuthPage() {
     const [ errorMessage, setErrorMessage ] = useState<string>("")
     const [ successMessage, setSuccessMessage ] = useState<string>("")
 
+    const { user, saveUser } = useBooking()
+
+    if (user) {
+        router.push("/")
+    }
+
     const fetchingData = async() => {
         try{
             const { data, status } = await Api().post("/sign-in", credential)
 
             if (status === 200) {
                 setErrorMessage("")
+                setSuccessMessage("Login Anda Berhasil! \nAnda akan diarahkan ke ke halaman utama dalam 5 detik")
+                saveUser(data.data)
+                setTimeout(() => {
+                    router.push("/")
+                }, 5000)
             }
 
         }catch(err){
@@ -92,11 +98,12 @@ export default function AuthPage() {
             <h2 className="font-bold text-(--status-refund) text-2xl">Selamat Datang Kembali</h2>
             <div className="w-[80%] p-1 grid grid-cols-2 items-center text-center text-xl font-bold bg-(--status-refund) rounded-lg">
                 <div className="bg-background  text-(--status-refund) p-2.5 rounded-sm cursor-pointer">Masuk</div>
-                <Link href={"/sign-up"} className="text-background p-2.5 rounded-sm cursor-pointer">Daftar</Link>
+                <Link href={"/auth/sign-up"} className="text-background p-2.5 rounded-sm cursor-pointer">Daftar</Link>
             </div>
             <div className="flex flex-col gap-1">
                 <span>Silahkan, Masukkan Dengan Akun Yang Sudah Terdaftar Ya!</span>
                 { errorMessage && <span className="text-center text-(--status-reject)">{errorMessage}</span> }
+                { successMessage && <span className="text-center text-(--status-done)">{successMessage}</span> }
             </div>
             <div className="w-full flex flex-col gap-2.5 px-2">
                 <div className="flex flex-col gap-1">

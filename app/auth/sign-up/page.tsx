@@ -1,10 +1,71 @@
+"use client"
+
 import ActionIcon from "@/components/Icons/Action";
+import { useBooking } from "@/context/Booking";
+import { AxiosErrorCustom } from "@/models/Models";
+import Api from "@/utils/Api";
 import Image from "next/image";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
+
+interface RegisterData{
+    first_name:string
+    last_name:string
+    email:string
+    password:string
+    confirm_password:string
+}
 
 export default function AuthPage() {
-    return <div className="w-full min-h-dvh p-5 py-8 flex gap-3 bg-white border-2 border-(--status-refund) rounded-lg">
-        <div className="flex flex-col justify-between gap-2.5 p-2">
+
+    const router = useRouter()
+    
+    const { user, saveUser } = useBooking()
+
+    const [showPassword, setShowPassword] = useState<boolean>(false)
+    const [showConfirmPassword, setConfirmShowPassword] = useState<boolean>(false)
+
+    const [ registerData, setRegisterData ] = useState<RegisterData>({
+        first_name : "",
+        last_name : "",
+        email : "",
+        password : "",
+        confirm_password : "",
+    })
+
+    if(user){
+        router.push("/")
+    }
+
+
+    const [ passwordMessage, setPasswordMessage ] = useState<string>("")
+
+    const [ errorMessage, setErrorMessage ] = useState<string>("")
+
+    async function HandleSubmit(){
+        
+        if(registerData.confirm_password != registerData.password){
+            setPasswordMessage("Kata Sandi Dan Konfirmasi Kata Sandi Berbeda")
+            return
+        }
+
+        try {
+            const { data } = await Api().post("/sign-up", registerData)
+            saveUser(data.data)
+            setErrorMessage("")
+            router.push("/")
+        }catch(err){
+            const error = err as AxiosErrorCustom
+            setErrorMessage(error.response.data.message)
+        }
+
+        setPasswordMessage("")
+
+    }
+
+    return <div className="w-full min-h-dvh p-5 py-8 flex gap-3 bg-white rounded-lg">
+        <div className="hidden md:flex flex-col justify-between gap-2.5 p-2">
             <div className="flex flex-col gap-2.5">
                 <Image
                     className="w-full h-80 rounded-lg"
@@ -34,65 +95,173 @@ export default function AuthPage() {
                 </button>
             </div>
         </div>
-        <div className="w-180 h-max p-5 py-5 full flex flex-col gap-4 items-center bg-white border-2 border-(--status-refund) shadow-xl rounded-lg">
+        <form className="w-180 h-max p-5 py-5 full flex flex-col gap-4 items-center bg-white border-2 border-(--status-refund) shadow-xl rounded-lg"
+            onSubmit={(e) => {
+                e.preventDefault()
+                HandleSubmit()
+            }}
+        >
             <h2 className="font-bold text-(--status-refund) text-2xl">Selamat Datang Kembali</h2>
-            <div className="w-[80%] p-1 grid grid-cols-2 items-center bg-(--status-refund) rounded-lg">
-                <button className="bg-background text-xl text-(--status-refund) font-bold p-2.5 rounded-sm cursor-pointer">Masuk</button>
-                <button className="text-background text-xl font-bold p-2.5 rounded-sm cursor-pointer">Daftar</button>
+            <div className="w-[80%] p-1 grid grid-cols-2 items-center text-center text-xl font-bold bg-(--status-refund) rounded-lg">
+                <Link href={"/auth/sign-in"} className="text-background p-2.5 rounded-sm cursor-pointer">Masuk</Link>
+                <div className="bg-background  text-(--status-refund) p-2.5 rounded-sm cursor-pointer">Daftar</div>
             </div>
-            <span>Silahkan, Masukkan Dengan Akun Yang Sudah Terdaftar Ya!</span>
-            <div className="w-full flex flex-col gap-2.5 px-2">
-                <div className="flex flex-col gap-1">
-                    <label className="font-medium" htmlFor="login_email_address">Alamat Email</label>
-                    <span className="text-sm">Masukkan alamat email yang sudah terdaftar</span>
+
+            <div className="flex flex-col gap-2.5">
+                <span>Silahkan, Mengisi Data Yang Dibutuhkan Ya!</span>
+                { errorMessage && <span className="text-center text-(--status-reject) text-lg">{errorMessage}</span> }
+            </div>
+
+            <div className="w-full flex flex-col gap-5 px-2">
+                <div className="flex items-center gap-2.5">
+                    <div className="w-full flex flex-col gap-2.5">
+                        <div className="flex flex-col gap-0.5">
+                            <label className="font-medium" htmlFor="first_name">Nama Depan</label>
+                        </div>
+                        <div className="flex flex-col gap-1.5">
+                            <input
+                                className="p-2.5 bg-background border-2 border-(--status-refund) outline-none rounded-lg"
+                                id="first_name"
+                                type="text"
+                                minLength={3}
+                                placeholder="Wildan"
+                                value={registerData.first_name}
+                                onChange={(e) => setRegisterData(prev => {
+                                    return {
+                                        ...prev,
+                                        ...{
+                                            first_name : e.target.value
+                                        }
+                                    }
+                                })}
+                                required
+                            />
+                        </div>
+                    </div>
+                    <div className="w-full flex flex-col gap-2.5">
+                        <div className="flex flex-col gap-0.5">
+                            <label className="font-medium" htmlFor="first_name">Nama Belakang</label>
+                        </div>
+                        <div className="flex flex-col gap-1.5">
+                            <input
+                                className="p-2.5 bg-background border-2 border-(--status-refund) outline-none rounded-lg"
+                                id="last_name"
+                                type="text"
+                                minLength={3}
+                                placeholder="Izhar A."
+                                value={registerData.last_name}
+                                onChange={(e) => setRegisterData(prev => {
+                                    return {
+                                        ...prev,
+                                        ...{
+                                            last_name : e.target.value
+                                        }
+                                    }
+                                })}
+                                required
+                            />
+                        </div>
+                    </div>
                 </div>
-                <div className="flex flex-col gap-1.5">
+                <div className="flex flex-col gap-2.5">
+                    <div className="flex flex-col gap-0.5">
+                        <label className="font-medium" htmlFor="email">Alamat Email</label>
+                    </div>
                     <input
-                        className="p-2.5 bg-background border-2 border-(--status-refund) outline-none rounded-lg"
-                        id="login_email_address"
+                        className="w-full p-2.5 bg-background border-2 border-(--status-refund) outline-none rounded-lg"
+                        id="email"
                         type="email"
-                        minLength={3}
+                        minLength={8}
+                        value={registerData.email}
+                                onChange={(e) => setRegisterData(prev => {
+                                    return {
+                                        ...prev,
+                                        ...{
+                                            email : e.target.value
+                                        }
+                                    }
+                                })}
                         placeholder="wildan@example.com"
                         required
                     />
-                    <span className="text-(--status-reject) text-sm">Email Kamu Tidak Terdaftar!</span>
                 </div>
-                <div className="flex flex-col gap-1">
-                    <label className="font-medium" htmlFor="login_email_address">Kata Sandi</label>
-                    <span className="text-sm">Masukkan Kata Sandi</span>
+                <div className="flex flex-col gap-2.5">
+                    <div className="flex flex-col gap-0.5">
+                        <label className="font-medium" htmlFor="password">Kata Sandi</label>
+                    </div>
+                    <div className="w-full flex items-center gap-2 relative">
+                        <input
+                            className="w-full p-2.5 bg-background border-2 border-(--status-refund) outline-none rounded-lg"
+                            id="password"
+                            type={showPassword ? "text" : "password"}
+                            minLength={8}
+                            value={registerData.password}
+                                onChange={(e) => setRegisterData(prev => {
+                                    return {
+                                        ...prev,
+                                        ...{
+                                            password : e.target.value
+                                        }
+                                    }
+                                })}
+                            placeholder=""
+                            required
+                        />
+                        <button className="cursor-pointer absolute top-3 right-3"
+                            type="button"
+                            onClick={() => setShowPassword(prev => !prev)}
+                        >
+                            <ActionIcon className="w-6 h-6 text-(--status-refund)" name={showPassword ? "eye_close" : "eye"} />
+                        </button>
+                    </div>
+                    { passwordMessage && <span className="text-(--status-reject)">Kata Sandi Harus Sama Dengan Konfirmasi Kata Sandi</span> }
                 </div>
-                <div className="w-full flex items-center gap-2 relative">
-                    <input
-                        className="w-full p-2.5 bg-background border-2 border-(--status-refund) outline-none rounded-lg"
-                        id="login_email_address"
-                        type="password"
-                        minLength={8}
-                        placeholder=""
-                        required
-                    />
-                    <button className="cursor-pointer absolute top-3 right-3">
-                        <ActionIcon className="w-6 h-6 text-(--status-refund)" name="eye" />
-                    </button>
+                <div className="flex flex-col gap-2.5">
+                    <div className="flex flex-col gap-0.5">
+                        <label className="font-medium" htmlFor="confirm_password">Konfirmasi Kata Sandi</label>
+                    </div>
+                    <div className="w-full flex items-center gap-2 relative">
+                        <input
+                            className="w-full p-2.5 bg-background border-2 border-(--status-refund) outline-none rounded-lg"
+                            id="confirm_password"
+                            type={showConfirmPassword ? "text" : "password"}
+                            minLength={8}
+                            value={registerData.confirm_password}
+                                onChange={(e) => setRegisterData(prev => {
+                                    return {
+                                        ...prev,
+                                        ...{
+                                            confirm_password : e.target.value
+                                        }
+                                    }
+                                })}
+                            placeholder=""
+                            required
+                        />
+                        <button className="cursor-pointer absolute top-3 right-3"
+                            type="button"
+                            onClick={() => setConfirmShowPassword(prev => !prev)}
+                        >
+                            <ActionIcon className="w-6 h-6 text-(--status-refund)" name={showConfirmPassword ? "eye_close" : "eye"} />
+                        </button>
+                        { passwordMessage && <span className="text-(--status-reject)">Konfirmasi Kata Sandi Harus Sama Dengan Kata Sandi</span> }
+                    </div>
                 </div>
             </div>
             <div className="w-full flex justify-between items-center px-2">
-                <div className="flex items-center gap-1">
-                    <input 
-                        className="w-4.5 h-4.5 border-2 border-(--status-refund) rounded-lg cursor-pointer"
-                        type="checkbox" id="remember_me" />
-                        <label className="cursor-pointer" htmlFor="remember_me">Ingat Saya Selama 7 Hari?</label>
-                </div>
-                <Link 
+                <Link
                     className="text-(--status-refund)"
-                    href={""}
-                >Lupa Password?</Link>
+                    href={"/auth/sign-in"}
+                >Sudah Memiliki Akun?</Link>
             </div>
             <div className="w-full flex items-center gap-2.5 px-2">
-                <button className="w-full text-background bg-(--status-refund) text-xl font-bold p-2.5 rounded-lg cursor-pointer">Masuk</button>
-                <button className="p-2 flex items-center justify-center font-bold bg-(--status-refund) rounded-lg cursor-pointer">
+                <button className="w-full text-background bg-(--status-refund) text-xl font-bold p-2.5 rounded-lg cursor-pointer">Daftar</button>
+                <button className="p-2 flex items-center justify-center font-bold bg-(--status-refund) rounded-lg cursor-pointer"
+                    type="button"
+                >
                     <ActionIcon className="w-8 h-8" name="google" />
                 </button>
             </div>
-        </div>
+        </form>
     </div>
 }
