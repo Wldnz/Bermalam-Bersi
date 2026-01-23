@@ -53,6 +53,8 @@ type RequestTransactionData struct {
 	Simulation      bool                   `json:"simulation"`
 	Currency        string                 `json:"currency"`
 	Language        string                 `json:"language"`
+
+	IsCalculationPrice bool `json:"is_calculation_price"`
 }
 
 // type LineItems struct {
@@ -80,6 +82,12 @@ type DataTransactions struct {
 	TaxCost          int
 	TotalRooms       int
 	LevelTransaction string // (night, two_night, long_stay)
+}
+
+type ResponseTotalPrice struct {
+	TotalPrice    int
+	TaxCost       int
+	DiscountPrice int
 }
 
 func CreateTransaction(c *gin.Context) {
@@ -175,6 +183,19 @@ func CreateTransaction(c *gin.Context) {
 	}
 
 	transaction.TotalPrice = totalPriceResponse.TotalPrice - totalDiscountResponse.TotalDiscountPrice
+	// wkwk, ada calculation dlu sblm dia bener" creatTransaction wkwkwk
+	if data.IsCalculationPrice {
+		c.JSON(http.StatusOK, gin.H{
+			"message": "Succesfully Calculating Price!",
+			"data": &ResponseTotalPrice{
+				TotalPrice:    transaction.TotalPrice,
+				TaxCost:       3000,
+				DiscountPrice: totalDiscountResponse.TotalDiscountPrice,
+			},
+			"status_code": http.StatusOK,
+		})
+		return
+	}
 
 	invoiceNumber := fmt.Sprintf("BOOK-%d", currentTimeMili)
 

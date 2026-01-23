@@ -43,6 +43,7 @@ func InitiliazeApi(g *gin.Engine) {
 	g.GET("/logout", auth.Logout)
 
 	g.POST("/sign-up-mitra", auth.RegisterMitra)
+	g.POST("/sign-up", auth.ResgiterGuest)
 
 	g.POST("/verification-otp", auth.VerificationOTP)
 	g.POST("/send-back-otp", auth.SendBackOTP)
@@ -50,7 +51,7 @@ func InitiliazeApi(g *gin.Engine) {
 	g.GET("/activate-account", auth.ActivateAccount)
 
 	g.GET("/check-activate-account", auth.CheckActivactionAccount)
-	g.GET("/check-current-session", auth.CheckCurrentSection)
+	g.GET("/check-current-session", auth.CheckCurrentSession)
 	g.POST("/send-back-activate", auth.SendBackActiavateAccunt)
 
 	// administrasi api
@@ -89,6 +90,9 @@ func InitiliazeApi(g *gin.Engine) {
 	g.GET("/faqs", guest_faqs.GetFAQS)
 
 	g.GET("/vouchers", guest_discount.GetDiscounts)
+	g.GET("/vouchers/users", guest_discount.GetVoucherUser)
+
+	g.POST("/check-price", guest_transactions.CheckPrice)
 
 	g.GET("/byte-to-string", func(c *gin.Context) {
 
