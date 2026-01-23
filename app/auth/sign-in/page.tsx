@@ -58,6 +58,15 @@ export default function AuthPage() {
         }
     }
 
+    const LoginOrRegisterWithGoogle = async() => {
+        try{
+            const { data } = await Api().post("/sign-in-google")
+            router.push(data.data.url)
+        }catch{
+            setErrorMessage("Gagal Menghubungkan Dengan Google, Coba Lagi Nanti Ya!")
+        }
+    }
+
     return <div className="w-full min-h-dvh p-5 py-8 flex gap-3 bg-white rounded-lg">
         <div className="flex flex-col justify-between gap-2.5 p-2">
             <div className="flex flex-col gap-2.5">
@@ -165,7 +174,8 @@ export default function AuthPage() {
                 <button className="w-full text-background bg-(--status-refund) text-xl font-bold p-2.5 rounded-lg cursor-pointer"
                 >Masuk</button>
                 <button className="p-2 flex items-center justify-center font-bold bg-(--status-refund) rounded-lg cursor-pointer"
-                    type="button"    
+                    type="button"
+                    onClick={LoginOrRegisterWithGoogle}    
                 >
                     <ActionIcon className="w-8 h-8" name="google" />
                 </button>

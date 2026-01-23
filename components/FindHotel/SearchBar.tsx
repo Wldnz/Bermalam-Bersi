@@ -124,7 +124,7 @@ export default function SearchBar({
                         className="w-full p-1.5 text-start cursor-pointer"
                         title={`recommendtion-search-hotel-${hotel}`}
                         onClick={() => {
-                            router.push(`/hotels/${hotel.id}`)
+                            router.push(`/hotels/${hotel.id}?${CreateQueryFindHotels(bookingData)}`)
                             setRecommendation(null)
                         }}
                     >

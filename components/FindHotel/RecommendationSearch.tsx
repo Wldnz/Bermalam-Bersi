@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation"
 import { useDebounce } from "use-debounce"
 import Api from "@/utils/Api"
 import ActionIcon from "../Icons/Action"
+import CreateQueryFindHotels from "@/utils/CreateQueryFindHotels"
+import BookingDate from "./BookingDate"
 
 export default function RecommendationSearch({
     setValue,
@@ -69,7 +71,7 @@ export default function RecommendationSearch({
                     <button className="w-full text-start"
                         title={`recommendtion-search-${hotel.label}`}
                         onClick={() => {
-                            router.push(`/hotels/${hotel.id}`)
+                            router.push(`/hotels/${hotel.id}?${CreateQueryFindHotels(value)}`)
                             setRecommendation(null)
                         }}
                     >{hotel.label}</button>

@@ -510,7 +510,7 @@ export default function DetailHotel() {
                                             <span className="text-(--status-refund)">{totalRoomsLabel(room.total_rooms)}</span>
                                             <div className="flex flex-col items-end gap-2.5">
                                                 <span className="text-(--status-refund)">{quantity}x Kamar</span>
-                                                <span className="line-through">{convertNumberIntoIDR(Number(room.default_price))}/Malam</span>
+                                                {/* <span className="line-through">{convertNumberIntoIDR(Number(room.default_price))}/Malam</span> */}
                                                 <span className="text-(--status-refund) text-lg font-bold">{getCurrentPriceLabel(Number(room.default_price), Number(room.minimum_price))}/Malam</span>
                                                 <div className="flex items-center gap-2.5">
                                                     <button className="flex justify-center items-center p-1 bg-(--status-refund) rounded-lg cursor-pointer"
@@ -527,6 +527,17 @@ export default function DetailHotel() {
                                                                 return r
                                                             })
                                                             setOrders(newOrders as OrderRoom[])
+                                                            const countTotalRooms = newOrders.reduce((acc, currentValue) => {
+                                                                return acc + currentValue.quantity
+                                                            }, 0)
+                                                            setBookingDate(prev => {
+                                                                return {
+                                                                    ...prev,
+                                                                    ...{
+                                                                        totalRooms: countTotalRooms
+                                                                    }
+                                                                }
+                                                            })
                                                         }}
                                                     >
                                                         <ActionIcon className="w-6 h-6 text-background" name="arrow-up" />
@@ -552,6 +563,17 @@ export default function DetailHotel() {
                                                                     return r
                                                                 }).filter(r => r)
                                                                 setOrders(newOrders as OrderRoom[])
+                                                                const countTotalRooms = (newOrders as OrderRoom[]).reduce((acc, currentValue) => {
+                                                                    return acc + currentValue.quantity
+                                                                }, 0)
+                                                                setBookingDate(prev => {
+                                                                    return {
+                                                                        ...prev,
+                                                                        ...{
+                                                                            totalRooms: countTotalRooms
+                                                                        }
+                                                                    }
+                                                                })
                                                             } catch {
                                                                 setOrders(prev => prev)
                                                             }
@@ -589,16 +611,16 @@ export default function DetailHotel() {
                             <span className="text-(--status-refund)">{orders.reduce((acc, cur) => {
                                 return acc + cur.quantity
                             }, 0)}x Kamar</span>
-                            <span className="text-sm line-through">{convertNumberIntoIDR(orders.reduce((acc, cur) => {
+                            {/* <span className="text-sm line-through">{convertNumberIntoIDR(orders.reduce((acc, cur) => {
                                 return acc + Number(cur.room.default_price) * cur.quantity
-                            }, 0))}</span>
+                            }, 0))}</span> */}
                             <span className="text-lg font-bold text-(--status-refund)">{
                                 getCurrentPriceLabel(orders.reduce((acc, cur) => {
-                                    return acc + Number(cur.room.default_price) * cur.quantity
+                                    return acc + Number(cur.room.default_price) * cur.quantity * totalNights
                                 }, 0), orders.reduce((acc, cur) => {
-                                    return acc + Number(cur.room.minimum_price) * cur.quantity
+                                    return acc + Number(cur.room.minimum_price) * cur.quantity * totalNights
                                 }, 0))
-                            }</span>
+                            }/ Malam</span>
                             <div className="flex items-center gap-1">
                                 <ActionIcon className="w-6 h-6 text-(--status-refund)" name="information" />
                                 <span className="text-sm">Belum Termasuk Pajak Dan Biaya Tambahan</span>
@@ -745,7 +767,7 @@ export default function DetailHotel() {
                                 <div className="flex flex-col items-end">
                                     <span className="font-bold text-(--status-refund) text-sm">{totalRoomsLabel(room.total_rooms)}</span>
                                     {Number(room.minimum_price) != 0 && <span className="text-sm line-through">{convertNumberIntoIDR(Number(room.default_price))}</span>}
-                                    <span className="font-bold text-lg text-(--status-refund)">{getCurrentPriceLabel(Number(room.default_price), Number(room.minimum_price))}</span>
+                                    <span className="font-bold text-lg text-(--status-refund)">{getCurrentPriceLabel(Number(room.default_price), Number(room.minimum_price))}/Malam</span>
                                 </div>
                                 <div className="flex justify-between items-center">
                                     <button className="text-(--status-refund) text-sm cursor-pointer"
@@ -761,11 +783,27 @@ export default function DetailHotel() {
                                                     return
                                                 }
                                                 isFound.quantity = newQty
+                                                const newOrders = orders.map(order => {
+                                                    order.quantity = newQty
+                                                    return order
+                                                })
+                                                setOrders(newOrders)
                                                 setOrders(prev => {
                                                     return prev.map(order => {
                                                         order.quantity = newQty
                                                         return order
                                                     })
+                                                })
+                                                const countTotalRooms = newOrders.reduce((acc, currentValue) => {
+                                                    return acc + currentValue.quantity
+                                                }, 0)
+                                                setBookingDate(prev => {
+                                                    return {
+                                                        ...prev,
+                                                        ...{
+                                                            totalRooms: countTotalRooms
+                                                        }
+                                                    }
                                                 })
                                             } else {
                                                 const order = {
@@ -774,11 +812,24 @@ export default function DetailHotel() {
                                                     checkIn: bookingDate.checkIn,
                                                     checkOut: bookingDate.checkOut,
                                                 } as OrderRoom
-                                                setOrders(prev => {
-                                                    return [
+
+                                                const newOrders = [
+                                                    ...orders,
+                                                    ...[order]
+                                                ]
+
+                                                setOrders(newOrders)
+
+                                                const countTotalRooms = newOrders.reduce((acc, currentValue) => {
+                                                    return acc + currentValue.quantity
+                                                }, 0)
+                                                setBookingDate(prev => {
+                                                    return {
                                                         ...prev,
-                                                        ...[order]
-                                                    ]
+                                                        ...{
+                                                            totalRooms: countTotalRooms
+                                                        }
+                                                    }
                                                 })
                                             }
                                             setShowAlert(true)

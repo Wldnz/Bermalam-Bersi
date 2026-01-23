@@ -11,6 +11,7 @@ import Navigation from "@/components/Navigation";
 import Hotel from "@/models/Hotel";
 import isDataHasBeenUpdate from "@/utils/CheckIsBookingDataIsUpdated";
 import convertNumberIntoIDR from "@/utils/ConvertNumberToIDR";
+import CreateQueryFindHotels from "@/utils/CreateQueryFindHotels";
 import FetchHotels from "@/utils/FetchHotels";
 import { getCurrentPriceLabel, totalRoomsLabel } from "@/utils/HotelPrice";
 import Image from "next/image";
@@ -94,7 +95,7 @@ export default function Hotels() {
                     </button>
                 </div>
             </div>
-            {isDefaultCard ? <DefaultHotelCards hotels={hotels} /> : <SecondHotelsCard hotels={hotels} />
+            {isDefaultCard ? <DefaultHotelCards hotels={hotels} bookingDate={bookingDate} /> : <SecondHotelsCard hotels={hotels} bookingDate={bookingDate} />
             }
         </div>
         <RecommendationPopulerDestination />
@@ -102,25 +103,25 @@ export default function Hotels() {
     </div>
 }
 
-function DefaultHotelCards({ hotels }: { hotels: Hotel[] }) {
+function DefaultHotelCards({ hotels, bookingDate }: { hotels: Hotel[], bookingDate : BookingState }) {
     return <div className="flex flex-col gap-2.5">
         {hotels.length ?
             hotels.map((hotel, i) => {
-                return <DefaultHotelCard key={`hotel-name-${hotel.name}-${i}`} hotel={hotel} />
+                return <DefaultHotelCard key={`hotel-name-${hotel.name}-${i}`} hotel={hotel} bookingDate={bookingDate} />
             }) : <HotelNotFound />
         }
     </div>
 }
 
-function SecondHotelsCard({ hotels }: { hotels: Hotel[] }) {
+function SecondHotelsCard({ hotels, bookingDate }: { hotels: Hotel[], bookingDate : BookingState }) {
     return <div className="w-full flex items-center gap-2.5">
         {hotels.length ? hotels.map((hotel, index) => {
-            return <SecondtHotelCard hotel={hotel} key={index} />
+            return <SecondtHotelCard hotel={hotel} bookingDate={bookingDate} key={index} />
         }) : <HotelNotFound />}
     </div>
 }
 
-function SecondtHotelCard({ hotel }: { hotel: Hotel }) {
+function SecondtHotelCard({ hotel, bookingDate }: { hotel: Hotel, bookingDate : BookingState }) {
 
     const price = {
         default: Number(hotel.default_price),
@@ -139,7 +140,7 @@ function SecondtHotelCard({ hotel }: { hotel: Hotel }) {
 
 
     return <Link className="flex flex-col gap-3.5 hover:border-2 border-(--status-refund) rounded-2xl p-2"
-        href={`/hotels/${hotel.id}`}
+        href={`/hotels/${hotel.id}?${CreateQueryFindHotels(bookingDate)}`}
     >
         <Image
             className="rounded-lg"
@@ -175,7 +176,7 @@ function SecondtHotelCard({ hotel }: { hotel: Hotel }) {
     </Link>
 }
 
-function DefaultHotelCard({ hotel }: { hotel: Hotel }) {
+function DefaultHotelCard({ hotel, bookingDate}: { hotel: Hotel, bookingDate : BookingState }) {
 
     const price = {
         default: Number(hotel.default_price),
@@ -194,7 +195,7 @@ function DefaultHotelCard({ hotel }: { hotel: Hotel }) {
 
 
     return <Link className="p-3 flex gap-3.5 hover:border-2 border-(--status-refund) rounded-2xl"
-        href={`/hotels/${hotel.id}`}
+        href={`/hotels/${hotel.id}?${CreateQueryFindHotels(bookingDate)}`}
     >
         <Image
             className="h-60 rounded-lg"

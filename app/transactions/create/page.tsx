@@ -5,11 +5,14 @@ import HotelIcons from "@/components/Icons/Hotel"
 import TransactionIcons from "@/components/Icons/Transactions"
 import Navigation from "@/components/Navigation"
 import { useBooking } from "@/context/Booking"
+import { AxiosErrorCustom } from "@/models/Models"
 import Api from "@/utils/Api"
 import convertNumberIntoIDR from "@/utils/ConvertNumberToIDR"
 import GetLabelDate from "@/utils/GetLabelDate"
+import GetTotalNights from "@/utils/GetTotalNight"
 import { getCurrentPriceLabel, totalRoomsLabel } from "@/utils/HotelPrice"
 import Image from "next/image"
+import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { useEffect, useState } from "react"
 
@@ -49,9 +52,9 @@ interface RequestTransaction {
     first_name: string
     last_name: string
     email: string
-    phone_country_code: number
+    phone_country_code: string
     phone: string
-    isDataUpadted: boolean
+    is_data_been_updated: boolean
     total_rooms: number
     check_in_at: number
     check_out_at: number
@@ -90,6 +93,9 @@ export default function CreateTransactionPage({ }) {
     useEffect(() => {
 
         if (bookingContext.bookingData && bookingContext.orders) {
+
+            const totalNights = GetTotalNights(bookingContext.bookingData!.checkIn, bookingContext.bookingData!.checkOut)
+
             const rooms = bookingContext.orders.map(order => {
                 return {
                     id_type_room: order.room.id,
@@ -107,7 +113,7 @@ export default function CreateTransactionPage({ }) {
             })
 
             const totalPrice = bookingContext.orders.reduce((acc, currentValue) => {
-                return acc + (Number(currentValue.room.default_price) * currentValue.quantity)
+                return acc + (Number(currentValue.room.default_price) * currentValue.quantity * totalNights)
             }, 0)
 
             setTransactionData({
@@ -116,14 +122,14 @@ export default function CreateTransactionPage({ }) {
                 last_name: user?.last_name ?? "",
                 email: user?.email ?? "",
                 phone: "",
-                phone_country_code: 62,
-                isDataUpadted: false,
+                phone_country_code: "62",
+                is_data_been_updated: false,
                 check_in_at: bookingContext.bookingData.checkIn,
                 check_out_at: bookingContext.bookingData.checkOut,
                 adults: bookingContext.bookingData.guests.adults,
                 childrens: bookingContext.bookingData.guests.childrens,
                 rooms: rooms,
-                category_booking: "dp",
+                category_booking: "full",
                 currency: "IDR",
                 language: "ID",
                 simulation: true,
@@ -177,16 +183,23 @@ export default function CreateTransactionPage({ }) {
     }, [transactionData])
 
 
-
-
     if (!bookingContext.bookingData || !bookingContext.orders) {
         return <div>Loading Pemesanan....</div>
     }
 
-
-
     const checkInDate = new Date(bookingContext.bookingData!.checkIn)
     const checkOutDate = new Date(bookingContext.bookingData!.checkOut)
+
+    const HandleSubmitTransaction = async (dataTransaction : RequestTransaction) => {
+        try{
+            const { data } = await Api().post("/create-booking", dataTransaction)
+            router.push(data.data)
+        }catch(err){
+            // alert...
+            const error = err as AxiosErrorCustom
+            console.log(error.response.data.message)
+        }
+    }
 
     // fetching credentials seperti nomro telepon, dan pengguna bisa merubah namanya disini... dan merubah nomor teleponnya! dan cari tahu bagaimana gar data dari bookingContext ini ttp ada walaupun di refresh... dan pastikan login mneggunakan googlenya berhasil
 
@@ -194,7 +207,48 @@ export default function CreateTransactionPage({ }) {
         <div className="w-full min-h-dvh flex flex-col gap-10 font-inter">
             <Navigation showNavigation={false} />
 
-            <form className="flex gap-5 justify-between">
+            <form className="flex gap-5 justify-between"
+                onSubmit={(e) => {
+                    e.preventDefault()
+                    if (!transactionData) return
+                    let temp_guest_data = {
+                        full_name: transactionData!.first_name + " " + transactionData!.last_name,
+                        phone_country_code: transactionData?.phone_country_code.toString() ?? "62",
+                        phone: transactionData!.phone,
+                        hasWhastApp : false,
+                    }
+                    const rooms = transactionData!.rooms.map((room) => {
+                        return {
+                            ...room,
+                            ... {
+                                guests: room.guests.map((guest) => {
+                                    if (guest.dataIsSameAsBefore) {
+                                        return {
+                                            ...guest,
+                                            ...{
+                                                full_name: temp_guest_data.full_name,
+                                                phone_country_code: temp_guest_data.phone_country_code,
+                                                phone: temp_guest_data.phone,
+                                                hasWhastApp : temp_guest_data.hasWhastApp
+                                            }
+                                        }
+                                    }
+                                    temp_guest_data = {
+                                        full_name: guest.full_name,
+                                        phone_country_code: guest.phone_country_code,
+                                        phone: guest.phone,
+                                        hasWhastApp : guest.hasWhastApp,
+                                    }
+                                    return guest
+                                })
+                            }
+                        }
+                    })
+                    const data = transactionData
+                    data.rooms = rooms
+                    HandleSubmitTransaction(data)
+                }}
+            >
 
                 <div className="w-full flex flex-col gap-10 p-3">
                     <p className="p-2 bg-red-200 font-bold rounded-lg">Pembayaran awal tidak dapat dilakukan pada pemesanan ini, karena salah satu kamar tidak mendukungnya</p>
@@ -223,7 +277,7 @@ export default function CreateTransactionPage({ }) {
                                             ...{
                                                 first_name: e.target.value,
                                                 fullname: e.target.value + " " + prev.last_name,
-                                                isDataUpadted : true,
+                                                is_data_been_updated: true,
                                             }
                                         }
                                     })}
@@ -246,7 +300,7 @@ export default function CreateTransactionPage({ }) {
                                             ...{
                                                 last_name: e.target.value,
                                                 fullname: prev.first_name + " " + e.target.value,
-                                                isDataUpadted : true,
+                                                is_data_been_updated: true,
                                             }
                                         }
                                     })}
@@ -281,26 +335,26 @@ export default function CreateTransactionPage({ }) {
                                             return {
                                                 ...prev,
                                                 ...{
-                                                    phone_country_code: Number(e.target.value),
-                                                    isDataUpadted : true,
+                                                    phone_country_code: e.target.value,
+                                                    is_data_been_updated: true,
                                                 }
                                             }
                                         })}
                                     >
                                         <option value="62">+62</option>
                                     </select>
-                                    <input className="w-full text-sm p-3 border-2 border-(--status-refund) outline-none rounded-lg" 
-                                    id="telp" name="telp"
-                                    type="text" inputMode="numeric" placeholder="815454512"
+                                    <input className="w-full text-sm p-3 border-2 border-(--status-refund) outline-none rounded-lg"
+                                        id="telp" name="telp"
+                                        type="text" inputMode="numeric" placeholder="815454512"
                                         required
-                                        value={transactionData?.phone}
+                                        value={transactionData?.phone ?? "-"}
                                         onChange={(e) => setTransactionData(prev => {
                                             if (!prev) return prev
                                             return {
                                                 ...prev,
                                                 ...{
                                                     phone: e.target.value,
-                                                    isDataUpadted : true,
+                                                    is_data_been_updated: true,
                                                 }
                                             }
                                         })}
@@ -319,9 +373,17 @@ export default function CreateTransactionPage({ }) {
                             <ActionIcon className="w-5 h-5 text-background" name="information" />
                         </div>
                         <div className="flex gap-3 text-background">
-                            <button >Daftar</button>
+                            <Link
+                                href={"/auth/sign-up"}
+                                className="cursor-pointer"
+                                type="button"
+                            >Daftar</Link>
                             <span> | </span>
-                            <button >Login</button>
+                            <Link
+                                href={"/auth/sign-in"}
+                                className="cursor-pointer"
+                                type="button"
+                            >Login</Link>
                         </div>
                     </div>}
 
@@ -388,14 +450,14 @@ export default function CreateTransactionPage({ }) {
                                             <div className="flex flex-col justify-between items-end text-end text-(--status-refund)">
                                                 <span>{totalRoomsLabel(room.total_rooms)}</span>
                                                 <div className="flex flex-col gap-1">
-                                                    <span>1x Kamar</span>
-                                                    <span className="text-foreground line-through"> {convertNumberIntoIDR(
+                                                    <span>{quantity}x Kamar</span>
+                                                    {Number(room.minimum_price) ? <span className="text-foreground line-through"> {convertNumberIntoIDR(
                                                         Number(room.default_price) * quantity
-                                                    )} </span>
+                                                    )} / Malam</span> : <></>}
                                                     <span className="font-bold text-lg">{getCurrentPriceLabel(
-                                                        Number(room.default_price) * quantity,
-                                                        Number(room.minimum_price) * quantity
-                                                    )}</span>
+                                                        Number(room.default_price),
+                                                        Number(room.minimum_price)
+                                                    )} / Malam</span>
                                                 </div>
                                             </div>
                                         </div>
@@ -746,8 +808,7 @@ export default function CreateTransactionPage({ }) {
                         />
                         <label className="text-sm cursor-pointer" htmlFor="accept_the_terms">Setuju Dengan Kebijakan Yang Anda!</label>
                     </div>
-                    <button className="w-full p-2 bg-(--status-refund) text-background font-bold rounded-lg"
-                        onClick={() => console.log(transactionData)}
+                    <button className="w-full p-2 bg-(--status-refund) text-background font-bold rounded-lg cursor-pointer"
                     >Buat Transaksi</button>
                 </div>
 

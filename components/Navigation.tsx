@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Dispatch, SetStateAction, useState } from "react";
+import BookingIcons from "./Icons/Booking";
 
 interface NavigationLinkProps {
     name: string,
@@ -48,7 +49,7 @@ export default function Navigation({
             <button className="p-2 bg-(--status-refund) text-background text-xs rounded-b-xl cursor-pointer">Mata Uang : Rupiah</button>
             <button className="p-2 bg-(--status-refund) text-background text-xs rounded-b-xl cursor-pointer">Bahasa : Indonesia</button>
         </div>}
-        { showNavigation && <NavigationBar border={border} /> }
+        {showNavigation && <NavigationBar border={border} />}
     </div>
 }
 
@@ -105,14 +106,55 @@ function NavigationBar({
         </div>
         }
         {/* settings */}
-        <div className="w-11 h-11 flex justify-center items-center rounded-full bg-background">
-            <Image
-                src={"/icons/ic_setting.svg"}
-                className="rounded-full"
-                height={30}
-                width={30}
-                alt="icon-setting"
-            />
+        <div className="w-11 h-11 flex justify-center items-center rounded-full bg-background relative">
+            <button className="">
+                <Image
+                    src={"/icons/ic_setting.svg"}
+                    className="rounded-full"
+                    height={30}
+                    width={30}
+                    alt="icon-setting"
+                />
+            </button>
+            <div className="min-w-50 flex flex-col gap-3.5 py-3 px-2.5 bg-white border-2 border-(--status-refund) rounded-lg absolute top-0 right-2 z-20">
+                <Link className="w-max flex items-center gap-1.5 cursor-pointer"
+                    href={"/profile"}
+                >
+                    <BookingIcons className="w-6 h-6"  name="adult"/>
+                    <span className="">Profile</span>
+                </Link>
+                <Link className="w-max flex items-center gap-1.5 cursor-pointer"
+                    href={"/vouchers"}
+                >
+                    <BookingIcons className="w-6 h-6"  name="adult"/>
+                    <span className="">Points</span>
+                </Link>
+                <Link 
+                    href={"/transactions/history"}
+                className="w-max flex items-center gap-1.5 cursor-pointer"
+                >
+                    <BookingIcons className="w-6 h-6"  name="adult"/>
+                    <span className="">Histori Pemesanan</span>
+                </Link>
+                <Link className="w-max flex items-center gap-1.5 cursor-pointer"
+                    href={"/transactions/history"}
+                >
+                    <BookingIcons className="w-6 h-6"  name="adult"/>
+                    <span className="">Daftar</span>
+                </Link>
+                <Link className="w-max flex items-center gap-1.5 cursor-pointer"
+                    href={"/auth-sign-up"}
+                >
+                    <BookingIcons className="w-6 h-6"  name="adult"/>
+                    <span className="">Masuk</span>
+                </Link>
+                <Link className="w-max flex items-center gap-1.5 cursor-pointer"
+                    href={"/auth-log-out"}
+                >
+                    <BookingIcons className="w-6 h-6"  name="adult"/>
+                    <span className="">Log Out</span>
+                </Link>
+            </div>
         </div>
     </div>
 }
