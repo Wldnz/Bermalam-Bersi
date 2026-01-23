@@ -14,6 +14,13 @@ type RequestCheckPrice struct {
 	Voucher    VoucherUsedTransaction              `json:"voucher"`
 }
 
+type ResponseCheckTotalPrice struct {
+	TotalPrice       int    `json:"total_price"`
+	TotalDiscount    int    `json:"total_discount"`
+	TotalTaxCost     int    `json:"total_tax_cost"`
+	LevelTransaction string `json:"level_transaction"`
+}
+
 func CheckPrice(c *gin.Context) {
 
 	credentials := controller.CheckCredentialsAccount(c)
@@ -108,10 +115,11 @@ func CheckPrice(c *gin.Context) {
 	// wkwk, ada calculation dlu sblm dia bener" creatTransaction wkwkwk
 	c.JSON(http.StatusOK, gin.H{
 		"message": "Succesfully Calculating Price!",
-		"data": &ResponseTotalPrice{
-			TotalPrice:    transaction.TotalPrice,
-			TaxCost:       3000,
-			DiscountPrice: totalDiscountResponse.TotalDiscountPrice,
+		"data": &ResponseCheckTotalPrice{
+			TotalPrice:       transaction.TotalPrice,
+			TotalTaxCost:     3000,
+			TotalDiscount:    totalDiscountResponse.TotalDiscountPrice,
+			LevelTransaction: transaction.LevelTransaction,
 		},
 		"status_code": http.StatusOK,
 	})
