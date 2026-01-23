@@ -48,6 +48,7 @@ func GetTotalPriceRoom(
 	check_out_at int,
 	rooms []RequestRoomBookingData,
 	level_transaction string,
+	totalNights int,
 ) ResponseCheckTotalPrice {
 
 	db, err := config.ConnectToDatabase()
@@ -127,16 +128,16 @@ func GetTotalPriceRoom(
 		price := 0
 
 		if data.MinimumPrice != 0 {
-			price = data.MinimumPrice * room.Quantity
+			price = data.MinimumPrice * room.Quantity * totalNights
 		} else {
-			price = data.DefaultPrice * room.Quantity
+			price = data.DefaultPrice * room.Quantity * totalNights
 		}
 
 		totalPrices += price
 
 		priceRooms = append(priceRooms, ResultPriceTypeRooms{
 			ID:         room.ID,
-			TotalPrice: price / room.Quantity,
+			TotalPrice: price,
 			Guests:     room.Guests,
 		})
 	}

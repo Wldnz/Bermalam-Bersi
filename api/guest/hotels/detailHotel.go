@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"fmt"
 	"net/http"
+	"strconv"
 	"time"
 
 	// "time"
@@ -495,9 +496,39 @@ func getHotelTypeRooms(
 
 	defer db.Close()
 
-	query := `SELECT 
+	checkInNumber, _ := strconv.Atoi(check_in)
+	checkOutNumber, _ := strconv.Atoi(check_out)
+
+	minimumBookDayMili := (60 * 60 * 24 * 1000)
+	whatLevelIsIt := checkOutNumber - checkInNumber
+	levelTransaction := "night"
+
+	if whatLevelIsIt >= minimumBookDayMili*7 {
+		levelTransaction = "long_stay"
+	} else if whatLevelIsIt >= minimumBookDayMili*2 {
+		levelTransaction = "two_night"
+	} else if whatLevelIsIt >= minimumBookDayMili {
+		levelTransaction = "night"
+	}
+
+	type_price := `CAST(MIN(htrdp.price_per_night) AS SIGNED)`
+	type_price_2 := `CAST(COALESCE(MIN(htrdp_2.price_per_night), 0) AS SIGNED)`
+
+	switch levelTransaction {
+	case "long_stay":
+		type_price = "CAST(MIN(htrdp.price_long_stay) AS SIGNED)"
+		type_price_2 = "CAST(COALESCE(MIN(htrdp_2.price_long_stay), 0) AS SIGNED)"
+	case "two_night":
+		type_price = "CAST(MIN(htrdp.price_per_two_night) AS SIGNED)"
+		type_price_2 = "CAST(COALESCE(MIN(htrdp_2.price_per_two_night), 0) AS SIGNED)"
+	default:
+		type_price = "CAST(MIN(htrdp.price_per_night) AS SIGNED)"
+		type_price_2 = "CAST(COALESCE(MIN(htrdp_2.price_per_night), 0) AS SIGNED)"
+	}
+
+	query := fmt.Sprintf(`SELECT 
 			htr.id, htr.name, htr.description, htr.free_cancel, htr.how_long_to_cancel, htr.refundable, htr.room_size, htr.bed_type, htr.max_adult, htr.max_children,
-			COUNT(DISTINCT hr.id) AS total_rooms, MIN(htrdp.price_per_night) AS default_price, COALESCE(MIN(htrdp_2.price_per_night), 0) AS minimum_price,
+			COUNT(DISTINCT hr.id) AS total_rooms, %s AS default_price, %s AS minimum_price,
 			htri.url AS image_url
 		FROM hotel_type_rooms htr
 		INNER JOIN hotel_type_room_price_period htrpp ON htrpp.id_type_room = htr.id AND htrpp.default=1
@@ -515,7 +546,7 @@ func getHotelTypeRooms(
 		)
 		WHERE htr.id_hotel=? AND htr.max_adult >= ? AND htr.max_children >= ?
 		GROUP BY htr.id, htri.url
-		HAVING total_rooms >= ?;`
+		HAVING total_rooms >= ?;`, type_price, type_price_2)
 
 	rows, err := db.Query(query,
 		check_in,

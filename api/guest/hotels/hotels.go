@@ -71,14 +71,44 @@ func FindHotels(c *gin.Context) {
 		category = "all"
 	}
 
+	checkInNumber, _ := strconv.Atoi(check_in)
+	checkOutNumber, _ := strconv.Atoi(check_out)
+
+	minimumBookDayMili := (60 * 60 * 24 * 1000)
+	whatLevelIsIt := checkOutNumber - checkInNumber
+	levelTransaction := "night"
+
+	if whatLevelIsIt >= minimumBookDayMili*7 {
+		levelTransaction = "long_stay"
+	} else if whatLevelIsIt >= minimumBookDayMili*2 {
+		levelTransaction = "two_night"
+	} else if whatLevelIsIt >= minimumBookDayMili {
+		levelTransaction = "night"
+	}
+
+	type_price := `CAST(MIN(htrdp.price_per_night) AS SIGNED)`
+	type_price_2 := `CAST(COALESCE(MIN(htrdp_2.price_per_night), 0) AS SIGNED)`
+
+	switch levelTransaction {
+	case "long_stay":
+		type_price = "CAST(MIN(htrdp.price_long_stay) AS SIGNED)"
+		type_price_2 = "CAST(COALESCE(MIN(htrdp_2.price_long_stay), 0) AS SIGNED)"
+	case "two_night":
+		type_price = "CAST(MIN(htrdp.price_per_two_night) AS SIGNED)"
+		type_price_2 = "CAST(COALESCE(MIN(htrdp_2.price_per_two_night), 0) AS SIGNED)"
+	default:
+		type_price = "CAST(MIN(htrdp.price_per_night) AS SIGNED)"
+		type_price_2 = "CAST(COALESCE(MIN(htrdp_2.price_per_night), 0) AS SIGNED)"
+	}
+
 	// sebentar... hotel membutuhkan dokumen dan status verifikasi adalah valid untuk muncul di halaman pencarian yaw!
 	// untuk saat ini belum digunakan...., karena deadline mepet banget :D
 	// masih ada kendala, ketika status kamarnya selain available maka bisa dipastikan kamarnya tidak akan muncul saa query dilakukan :D
 	// well, kalo di sistem hotel beneran, ketika memesan kamar, tamu itu bisa memesan lebih dari 1 kamar asalkan tipe kamarnya sama, karena biasanya yang memesan adalah keluarga yang ingin berdekatan dan mencegah adanya komplain
-	query := `SELECT 
+	query := fmt.Sprintf(`SELECT 
 	h.id, h.name, h.description, h.stars, 
-	MIN(htrdp.price_per_night) AS default_price,
-	COALESCE(MIN(htrdp_2.price_per_night),0) AS minimun_price,
+	%s AS default_price,
+	%s AS minimun_price,
 	COUNT(DISTINCT hr.id) AS total_rooms,
 	hi.url AS image_url
  FROM hotels h  
@@ -99,7 +129,7 @@ func FindHotels(c *gin.Context) {
 			AND (h.name LIKE ? OR hl.city LIKE ? OR hl.province LIKE ?) 
 			AND htr.max_adult >= ? AND htr.max_children >= ?
 				GROUP BY h.id, hi.url
-				HAVING total_rooms >= ?`
+				HAVING total_rooms >= ?`, type_price, type_price_2)
 
 	searchParam := "%" + search + "%"
 

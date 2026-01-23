@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"math"
 	"net/http"
 	"os"
 	"time"
@@ -38,6 +39,8 @@ type VoucherUsedTransaction struct {
 
 type RequestTransactionData struct {
 	FullName         string                              `json:"full_name"`
+	FirstName        string                              `json:"first_name"`
+	LastName         string                              `json:"last_name"`
 	Email            string                              `json:"email"`
 	PhoneCountryCode string                              `json:"phone_country_code"`
 	Phone            string                              `json:"phone"`
@@ -54,19 +57,8 @@ type RequestTransactionData struct {
 	Currency        string                 `json:"currency"`
 	Language        string                 `json:"language"`
 
-	IsCalculationPrice bool `json:"is_calculation_price"`
+	IsDataBeenUpdated bool `json:"is_data_been_updated"`
 }
-
-// type LineItems struct {
-// 	ID       string `json:"id"`
-// 	Name     string `json:"name"`
-// 	Quantity string `json:"quantity"`
-// 	Price    int    `json:"price"`
-// 	Category string `json:"category"`
-// 	URL      string `json:"url"`
-// 	ImageURL string `json:"image_url"`
-// 	Type     string `json:"type"`
-// }
 
 type DokuResponse struct {
 	Message  []string `json:"message"`
@@ -115,12 +107,33 @@ func CreateTransaction(c *gin.Context) {
 		return
 	}
 
+	// sebelum masuk kesanan kita check terlebih dahulu information dari data tamu ya!
+
+	// update information account
+	if data.IsDataBeenUpdated {
+		response := controller.UpdateAccountInformationTransaction(
+			credentials,
+			data.FirstName,
+			data.LastName,
+			data.PhoneCountryCode,
+			data.Phone,
+		)
+		if !response.IsSuccess {
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"message": response.Message,
+				"error":   response.ErrorMessage,
+			})
+			return
+		}
+	}
+
 	var transaction DataTransactions
 
 	// dapatkan level pengguna
 	// 1 day
 	minimumBookDayMili := (60 * 60 * 24 * 1000)
 	whatLevelIsIt := data.CheckOutAt - data.CheckInAt
+	totalNights := int(math.Round(float64(data.CheckOutAt-data.CheckInAt) / float64(minimumBookDayMili)))
 
 	if whatLevelIsIt >= minimumBookDayMili*7 {
 		transaction.LevelTransaction = "long_stay"
@@ -142,6 +155,7 @@ func CreateTransaction(c *gin.Context) {
 		data.CheckOutAt,
 		data.Rooms,
 		transaction.LevelTransaction,
+		totalNights,
 	)
 
 	if !totalPriceResponse.IsSuccess {
@@ -183,33 +197,20 @@ func CreateTransaction(c *gin.Context) {
 	}
 
 	transaction.TotalPrice = totalPriceResponse.TotalPrice - totalDiscountResponse.TotalDiscountPrice
-	// wkwk, ada calculation dlu sblm dia bener" creatTransaction wkwkwk
-	if data.IsCalculationPrice {
-		c.JSON(http.StatusOK, gin.H{
-			"message": "Succesfully Calculating Price!",
-			"data": &ResponseTotalPrice{
-				TotalPrice:    transaction.TotalPrice,
-				TaxCost:       3000,
-				DiscountPrice: totalDiscountResponse.TotalDiscountPrice,
-			},
-			"status_code": http.StatusOK,
-		})
-		return
-	}
 
 	invoiceNumber := fmt.Sprintf("BOOK-%d", currentTimeMili)
 
 	// sementara seperti ini dlu.... (deadline mepet... wkwkwk)
 	paylodMaps := map[string]interface{}{
 		"order": map[string]interface{}{
-			"invoice_number": invoiceNumber,
-			"amount":         transaction.TotalPrice + 3000,
-			"currency":       data.Currency,
-			"language":       data.Language,
-			// "callback_url": "http://merchantcallbackurl.domain/",
-			// "callback_url_cancel": "https://merchantcallbackurl-cancel.domain",
-			// "callback_url_result": "https://merchantcallbackurl-cancel.domain",
-			"auto_redirect": true,
+			"invoice_number":      invoiceNumber,
+			"amount":              transaction.TotalPrice + 3000,
+			"currency":            data.Currency,
+			"language":            data.Language,
+			"callback_url":        "http://localhost:3000/transactions/history",
+			"callback_url_cancel": "http://localhost:3000/transactions/history",
+			"callback_url_result": "http://localhost:3000/transactions/history",
+			"auto_redirect":       true,
 		},
 		"payment": map[string]interface{}{
 			"payment_due_date": 60 * 12,

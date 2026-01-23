@@ -129,9 +129,6 @@ func CallBackTransactionDoku(c *gin.Context) {
 		return
 	}
 
-	fmt.Println("data berhasil di dapatkan")
-	fmt.Println(data)
-
 	db, err := config.ConnectToDatabase()
 
 	if err != nil {

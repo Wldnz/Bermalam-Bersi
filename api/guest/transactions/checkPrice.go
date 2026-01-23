@@ -1,6 +1,8 @@
 package guest_transactions
 
 import (
+	"fmt"
+	"math"
 	"net/http"
 
 	"bersi.bermalam.id/controller"
@@ -49,6 +51,8 @@ func CheckPrice(c *gin.Context) {
 	// dapatkan level pengguna
 	// 1 day
 	minimumBookDayMili := (60 * 60 * 24 * 1000)
+	totalNights := int(math.Round(float64(data.CheckOutAt-data.CheckInAt) / float64(minimumBookDayMili)))
+	fmt.Println(totalNights)
 	whatLevelIsIt := data.CheckOutAt - data.CheckInAt
 
 	if whatLevelIsIt >= minimumBookDayMili*7 {
@@ -71,6 +75,7 @@ func CheckPrice(c *gin.Context) {
 		data.CheckOutAt,
 		data.Rooms,
 		transaction.LevelTransaction,
+		totalNights,
 	)
 
 	if !totalPriceResponse.IsSuccess {
