@@ -14,7 +14,7 @@ export default function GoogleAuthCallBack() {
            try{
              if (typeof window !== 'undefined') {
                 setCurrentQueryParams(location.href.split(location.origin)[1])
-                await Api().get(`/sign-in-google${currentQueryParams}`)
+                await Api().get(`${location.href.split(location.origin)[1]}`)
                 router.push("/")
             }
            }catch{

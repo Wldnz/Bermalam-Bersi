@@ -4,6 +4,7 @@ import ActionIcon from "@/components/Icons/Action";
 import { useBooking } from "@/context/Booking";
 import { AxiosErrorCustom } from "@/models/Models";
 import Api from "@/utils/Api";
+import LoginOrRegisterWithGoogle from "@/utils/LoginOrRegisterWithGoogle";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -78,7 +79,9 @@ export default function AuthPage() {
                     <h2 className="font-bold text-lg">Temukan Tempat Bermalam Disekitar Wisata</h2>
                     <span className="text">Kamu bisa banget menemukan tempat untuk bermalam disekitar wisata atau tempat yang ingin kamu kunjungi</span>
                 </div>
-                <button className="w-max p-2.5 font-bold text-(--status-refund) border-2 border-(--status-refund) rounded-sm cursor-pointer">Cobain Sekarang!</button>
+                <button className="w-max p-2.5 font-bold text-(--status-refund) border-2 border-(--status-refund) rounded-sm cursor-pointer"
+                    onClick={() => router.push("/")}
+                >Cobain Sekarang!</button>
             </div>
             <div className="flex items-center justify-between">
                 <button className="p-1 bg-(--status-refund) rounded-sm cursor-pointer">
@@ -258,6 +261,7 @@ export default function AuthPage() {
                 <button className="w-full text-background bg-(--status-refund) text-xl font-bold p-2.5 rounded-lg cursor-pointer">Daftar</button>
                 <button className="p-2 flex items-center justify-center font-bold bg-(--status-refund) rounded-lg cursor-pointer"
                     type="button"
+                    onClick={() => LoginOrRegisterWithGoogle(router, setErrorMessage)}
                 >
                     <ActionIcon className="w-8 h-8" name="google" />
                 </button>

@@ -43,7 +43,7 @@ export default function Hotels() {
 
     const [showUpdatedData, setShowUpdatedData] = useState<boolean>(isDataHasBeenUpdate(defaultBookingDate, bookingDate))
 
-    const [isDefaultCard, setIsDefaultCard] = useState<boolean>(false)
+    const [isDefaultCard, setIsDefaultCard] = useState<boolean>(true)
 
 
     const [hotels, setHotels] = useState<Hotel[] | []>([]);
@@ -168,8 +168,8 @@ function SecondtHotelCard({ hotel, bookingDate }: { hotel: Hotel, bookingDate : 
             {price.minimum != 0 && <span className="p-1.5 px-2 text-center text-background font-bold bg-(--status-refund) rounded-lg">{price.discountLabel}</span>}
             <div className="flex flex-col items-end gap-2.5">
                 <h4 className="font-bold text-(--status-refund)">{price.roomLabel}</h4>
-                {price.minimum != 0 && <p className="line-through">{convertNumberIntoIDR(price.default)}</p>}
-                <h3 className="font-bold text-(--status-refund) text-xl">{price.priceLabel}</h3>
+                {price.minimum != 0 && <p className="line-through">{convertNumberIntoIDR(price.default)}/Malam</p>}
+                <h3 className="font-bold text-(--status-refund) text-xl">{price.priceLabel}/Malam</h3>
                 <button className="w-full p-3 font-bold text-background bg-(--status-refund) cursor-pointer rounded-sm">Lihat Kamar</button>
             </div>
         </div>
@@ -217,15 +217,15 @@ function DefaultHotelCard({ hotel, bookingDate}: { hotel: Hotel, bookingDate : B
                 <span className="p-1 px-3 bg-(--status-refund) text-background rounded-xl">Luxury</span>
                 <span className="p-1 px-3 bg-(--status-refund) text-background rounded-xl">5 Star</span>
             </div>
-            <p className="max-w-100">{hotel.description}</p>
+            <p className="">{hotel.description}</p>
         </div>
         {/* prices */}
         <div className={`w-full flex flex-col ${price.minimum != 0 ? "justify-between" : "justify-end"} items-end`}>
             {price.minimum != 0 && <span className="p-1.5 px-2 text-center text-background font-bold bg-(--status-refund) rounded-lg">{price.discountLabel}</span>}
             <div className="flex flex-col items-end gap-2.5">
                 <h4 className="font-bold text-(--status-refund)">{price.roomLabel}</h4>
-                {price.minimum != 0 && <p className="line-through">{convertNumberIntoIDR(price.default)}</p>}
-                <h3 className="font-bold text-(--status-refund) text-2xl">{price.priceLabel}</h3>
+                {price.minimum != 0 && <p className="line-through">{convertNumberIntoIDR(price.default)}/Malam</p>}
+                <h3 className="font-bold text-(--status-refund) text-2xl">{price.priceLabel}/Malam</h3>
                 <button className="w-full p-3 font-bold text-background bg-(--status-refund) cursor-pointer rounded-sm">Lihat Kamar</button>
             </div>
         </div>

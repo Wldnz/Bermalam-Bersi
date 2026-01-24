@@ -2,9 +2,12 @@
 "use client"
 import Image from "next/image";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { Dispatch, SetStateAction, useState } from "react";
 import BookingIcons from "./Icons/Booking";
+import ActionIcon from "./Icons/Action";
+import { useBooking } from "@/context/Booking";
+import Api from "@/utils/Api";
 
 interface NavigationLinkProps {
     name: string,
@@ -61,7 +64,23 @@ function NavigationBar({
 
     const pathName = usePathname()
 
+    const router = useRouter()
+
     const [showNavigation, setShowNavigation] = useState<boolean>(true)
+
+    const [ showSettings,  setShowSettings ] = useState<boolean>(false)
+
+    const { user } = useBooking()
+
+    const HandleLogout = async() => {
+        try{
+            const { status } = await Api().get("/logout")
+            router.refresh()
+            setShowSettings(false)
+        }catch{
+
+        }
+    }
 
     return <div className="flex justify-between items-center">
 
@@ -107,7 +126,9 @@ function NavigationBar({
         }
         {/* settings */}
         <div className="w-11 h-11 flex justify-center items-center rounded-full bg-background relative">
-            <button className="">
+            <button className="cursor-pointer"
+                onClick={() => setShowSettings(prev => !prev)}
+            >
                 <Image
                     src={"/icons/ic_setting.svg"}
                     className="rounded-full"
@@ -116,47 +137,51 @@ function NavigationBar({
                     alt="icon-setting"
                 />
             </button>
-            <div className="min-w-50 flex flex-col gap-3.5 py-3 px-2.5 bg-white border-2 border-(--status-refund) rounded-lg absolute top-0 right-2 z-20">
-                <Link className="w-max flex items-center gap-1.5 cursor-pointer"
-                    href={"/profile"}
+            { showSettings? <div className="min-w-50 flex flex-col gap-3.5 py-3 px-2.5 bg-white border-3 border-(--status-refund) rounded-lg absolute -bottom-40 right-2 z-20">
+                {user && <>
+                    <Link className="w-max flex items-center gap-1.5 cursor-pointer"
+                        href={"/profile"}
+                    >
+                        <BookingIcons className="w-6 h-6" name="adult" />
+                        <span className="">Profile</span>
+                    </Link>
+                    <Link className="w-max flex items-center gap-1.5 cursor-pointer"
+                        href={"/vouchers"}
+                    >
+                        <ActionIcon className="w-6 h-6" name="bermalam_coin" />
+                        <span className="">Points</span>
+                    </Link>
+                    <Link
+                        href={"/transactions/history"}
+                        className="w-max flex items-center gap-1.5 cursor-pointer"
+                    >
+                        <ActionIcon className="w-6 h-6" name="history" />
+                        <span className="">Histori Pemesanan</span>
+                    </Link>
+                </>}
+                {!user && <>
+                    <Link className="w-max flex items-center gap-1.5 cursor-pointer"
+                        href={"/auth/sign-up"}
+                    >
+                        <ActionIcon className="w-6 h-6" name="sign-in" />
+                        <span className="">Daftar</span>
+                    </Link>
+                    <Link className="w-max flex items-center gap-1.5 cursor-pointer"
+                        href={"/auth/sign-in"}
+                    >
+                        <ActionIcon className="w-6 h-6" name="sign-in" />
+                        <span className="">Masuk</span>
+                    </Link>
+                </>}
+                {user && <button className="w-max flex items-center gap-1.5 cursor-pointer"
+                    onClick={HandleLogout}
                 >
-                    <BookingIcons className="w-6 h-6"  name="adult"/>
-                    <span className="">Profile</span>
-                </Link>
-                <Link className="w-max flex items-center gap-1.5 cursor-pointer"
-                    href={"/vouchers"}
-                >
-                    <BookingIcons className="w-6 h-6"  name="adult"/>
-                    <span className="">Points</span>
-                </Link>
-                <Link 
-                    href={"/transactions/history"}
-                className="w-max flex items-center gap-1.5 cursor-pointer"
-                >
-                    <BookingIcons className="w-6 h-6"  name="adult"/>
-                    <span className="">Histori Pemesanan</span>
-                </Link>
-                <Link className="w-max flex items-center gap-1.5 cursor-pointer"
-                    href={"/transactions/history"}
-                >
-                    <BookingIcons className="w-6 h-6"  name="adult"/>
-                    <span className="">Daftar</span>
-                </Link>
-                <Link className="w-max flex items-center gap-1.5 cursor-pointer"
-                    href={"/auth-sign-up"}
-                >
-                    <BookingIcons className="w-6 h-6"  name="adult"/>
-                    <span className="">Masuk</span>
-                </Link>
-                <Link className="w-max flex items-center gap-1.5 cursor-pointer"
-                    href={"/auth-log-out"}
-                >
-                    <BookingIcons className="w-6 h-6"  name="adult"/>
+                    <ActionIcon className="w-6 h-6" name="sign-in" />
                     <span className="">Log Out</span>
-                </Link>
-            </div>
+                </button>}
+            </div> : <></> }
         </div>
-    </div>
+    </div >
 }
 
 function SideNaviagtionButtonHidden() {

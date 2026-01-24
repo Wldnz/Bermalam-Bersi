@@ -3,6 +3,7 @@ import ActionIcon from "@/components/Icons/Action";
 import { useBooking } from "@/context/Booking";
 import { AxiosErrorCustom } from "@/models/Models";
 import Api from "@/utils/Api";
+import LoginOrRegisterWithGoogle from "@/utils/LoginOrRegisterWithGoogle";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -58,14 +59,6 @@ export default function AuthPage() {
         }
     }
 
-    const LoginOrRegisterWithGoogle = async() => {
-        try{
-            const { data } = await Api().post("/sign-in-google")
-            router.push(data.data.url)
-        }catch{
-            setErrorMessage("Gagal Menghubungkan Dengan Google, Coba Lagi Nanti Ya!")
-        }
-    }
 
     return <div className="w-full min-h-dvh p-5 py-8 flex gap-3 bg-white rounded-lg">
         <div className="flex flex-col justify-between gap-2.5 p-2">
@@ -81,7 +74,9 @@ export default function AuthPage() {
                     <h2 className="font-bold text-lg">Temukan Tempat Bermalam Disekitar Wisata</h2>
                     <span className="text">Kamu bisa banget menemukan tempat untuk bermalam disekitar wisata atau tempat yang ingin kamu kunjungi</span>
                 </div>
-                <button className="w-max p-2.5 font-bold text-(--status-refund) border-2 border-(--status-refund) rounded-sm cursor-pointer">Cobain Sekarang!</button>
+                <button className="w-max p-2.5 font-bold text-(--status-refund) border-2 border-(--status-refund) rounded-sm cursor-pointer"
+                    onClick={() => router.push("/")}
+                >Cobain Sekarang!</button>
             </div>
             <div className="flex items-center justify-between">
                 <button className="p-1 bg-(--status-refund) rounded-sm cursor-pointer">
@@ -175,7 +170,7 @@ export default function AuthPage() {
                 >Masuk</button>
                 <button className="p-2 flex items-center justify-center font-bold bg-(--status-refund) rounded-lg cursor-pointer"
                     type="button"
-                    onClick={LoginOrRegisterWithGoogle}    
+                    onClick={() => LoginOrRegisterWithGoogle(router, setErrorMessage)}    
                 >
                     <ActionIcon className="w-8 h-8" name="google" />
                 </button>
