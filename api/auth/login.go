@@ -2,6 +2,7 @@ package auth
 
 import (
 	"database/sql"
+	"fmt"
 	"net/http"
 	"os"
 	"strings"
@@ -256,6 +257,13 @@ func LoginWithGoogleCallBack(c *gin.Context) {
 
 	cookie, err := c.Request.Cookie("pre-auth-google")
 
+	state := c.Query("state")
+	code := c.Query("code")
+
+	fmt.Println("================callback-google-sent")
+	fmt.Println(state)
+	fmt.Println(code)
+
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"message":     "Sorry... We Cannot Process Your Request...",
@@ -265,7 +273,7 @@ func LoginWithGoogleCallBack(c *gin.Context) {
 		return
 	}
 
-	if c.Request.FormValue("state") != cookie.Value {
+	if state != cookie.Value {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"message":     "Sorry... We Cannot Process Your Invalid Oauth2 Token...",
 			"status_code": http.StatusBadRequest,
@@ -273,7 +281,7 @@ func LoginWithGoogleCallBack(c *gin.Context) {
 		return
 	}
 
-	response := lib.GetGoogleAccountData(c.Request.FormValue("code"))
+	response := lib.GetGoogleAccountData(code)
 
 	if !response.IsSuccess {
 		c.JSON(http.StatusInternalServerError, gin.H{

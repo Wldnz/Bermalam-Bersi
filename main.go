@@ -31,12 +31,12 @@ func main() {
 	g := gin.New()
 
 	g.Use(cors.New(cors.Config{
-		AllowOrigins:     []string{"http://localhost:3000", "https://example.com"}, // Allowed domains
-		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},      // Allowed HTTP methods
-		AllowHeaders:     []string{"Origin", "Content-Type", "Authorization"},      // Allowed request headers
-		ExposeHeaders:    []string{"Content-Length"},                               // Headers exposed to the browser
-		AllowCredentials: true,                                                     // Allow cookies/auth headers
-		MaxAge:           12 * time.Hour,                                           // Cache preflight response
+		AllowOrigins:     []string{"http://localhost:3000", "http://localhost:5000", "https://example.com"}, // Allowed domains
+		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},                               // Allowed HTTP methods
+		AllowHeaders:     []string{"Origin", "Content-Type", "Authorization"},                               // Allowed request headers
+		ExposeHeaders:    []string{"Content-Length"},                                                        // Headers exposed to the browser
+		AllowCredentials: true,                                                                              // Allow cookies/auth headers
+		MaxAge:           12 * time.Hour,                                                                    // Cache preflight response
 	}))
 
 	api.InitiliazeApi(g)

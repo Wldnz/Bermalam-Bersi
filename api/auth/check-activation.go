@@ -73,6 +73,11 @@ func CheckActivactionAccount(c *gin.Context) {
 		return
 	}
 
+	c.SetCookieData(&http.Cookie{
+		Name:   "verification-token",
+		MaxAge: -1,
+	})
+
 	c.JSON(http.StatusOK, gin.H{
 		"message":     "Account Status Was Active!",
 		"verified":    true,

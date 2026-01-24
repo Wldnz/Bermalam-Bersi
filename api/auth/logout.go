@@ -31,7 +31,7 @@ func Logout(c *gin.Context) {
 		return
 	}
 
-	db.Close()
+	defer db.Close()
 
 	stmt, err := db.Prepare(`UPDATE session SET expired_at=?, updated_at=? WHERE token=?`)
 

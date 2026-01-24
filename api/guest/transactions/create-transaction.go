@@ -109,6 +109,9 @@ func CreateTransaction(c *gin.Context) {
 
 	// sebelum masuk kesanan kita check terlebih dahulu information dari data tamu ya!
 
+	fmt.Println("sudah masuk")
+	fmt.Println(data)
+
 	// update information account
 	if data.IsDataBeenUpdated {
 		response := controller.UpdateAccountInformationTransaction(

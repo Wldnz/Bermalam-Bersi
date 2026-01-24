@@ -252,7 +252,7 @@ func GetDetailHistoryTransaction(id_user int, transaction_id string) ResponseDet
 	var transactionVoucherRaw ResultTransactionVoucerRaw
 
 	query := `SELECT 
-				t.id AS transaction_id, t.total_price, t.tax_cost, t.total_rooms, t.adult, t.children, t.check_in, t.check_out, t.category, t.level, t.payment_type, t.payment_link, t.status, t.expired_at, t.created_at, t.updated_at,
+				t.id AS transaction_id, t.total_price, t.tax_cost, t.total_rooms, t.adult, t.children, t.check_in, t.check_out, t.category, t.level, COALESCE(t.payment_type, ""), t.payment_link, t.status, t.expired_at, t.created_at, t.updated_at,
 				tv.id AS transaction_voucher_id, tv.id_user_voucher AS user_voucher_id, tv.total_price_reduction
 			FROM transactions t
 			LEFT JOIN transaction_vouchers tv ON tv.id_transaction = t.id

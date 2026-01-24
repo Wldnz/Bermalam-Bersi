@@ -138,10 +138,10 @@ func ActivateAccount(c *gin.Context) {
 								}
 
 								if response.StatusCode == 0 {
-									c.SetCookieData(&http.Cookie{
-										Name:   "verification-token",
-										MaxAge: -1,
-									})
+									// c.SetCookieData(&http.Cookie{
+									// 	Name:   "verification-token",
+									// 	MaxAge: -1,
+									// })
 									c.SetCookieData(&http.Cookie{
 										Name:     "auth-token",
 										Value:    token,
