@@ -53,7 +53,7 @@ export default function SignInPage() {
         .then(response => {
             console.log("masuk response...")
             if(response.status === 200){
-                router.push("/mitra/dashboard"); // sementara kesini dlu
+                router.push("/dashboard"); // sementara kesini dlu
             }else if(response.status === 400){
                 router.push("/signin");
             }else if(response.status === 404){

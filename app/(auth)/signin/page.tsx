@@ -28,7 +28,7 @@ export default function SignInPage() {
 
     const params = useParams();
 
-    const { role = "hotel_owner" } = params
+    const { role = "mitra" } = params
 
     const [loginData, setLoginData] = useState<LoginFormData>({
         email: "",
@@ -93,8 +93,8 @@ export default function SignInPage() {
             <div className="w-full p-6 flex flex-col items-center gap-3.5">
                 <h2 className="text-3xl font-bold text-(--b1)">MASUK</h2>
                 <div className="w-full flex">
-                    <ButtonRoleSignIn active={loginData.role == "hotel_owner"}  targetRole="hotel_owner" label="Mitra" setCurrentRole={setLoginData} />
-                    <ButtonRoleSignIn active={loginData.role == "receptionist"}  targetRole="receptionist" label="Resepsionis" setCurrentRole={setLoginData} />
+                    <ButtonRoleSignIn active={loginData.role == "mitra"}  targetRole="mitra" label="Mitra" setCurrentRole={setLoginData} />
+                    <ButtonRoleSignIn active={loginData.role == "mitra_receptionist"}  targetRole="mitra_receptionist" label="Resepsionis" setCurrentRole={setLoginData} />
                 </div>
                 {isShowErrorMessage.general_information.show? 
                     <p className="text-sm text-(--status-reject)">{isShowErrorMessage.general_information.message}</p>

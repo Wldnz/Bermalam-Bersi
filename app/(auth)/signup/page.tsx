@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { redirect } from "next/navigation";
+import { redirect, useRouter } from "next/navigation";
 import { ChangeEvent, FormEvent, useState } from "react";
 
 interface RegisterFormData {
@@ -27,6 +27,8 @@ interface ErrorMessage{
 }
 
 export default function SignUpPage() {
+
+    const router= useRouter()
 
     const [registerData, setRegisterData] = useState<RegisterFormData>({
         first_name: "",
@@ -82,7 +84,7 @@ export default function SignUpPage() {
             return
         }
 
-        fetch('http://localhost:8000/register-mitra', {
+        fetch('http://localhost:8000/sign-up-mitra', {
             headers: {
                 "Content-Type": "application/json",
             },
@@ -93,7 +95,7 @@ export default function SignUpPage() {
             .then(res => res.json())
             .then(res => {
                 if (res.status_code == 201) {
-                    redirect('/signup/step_2')
+                    router.push('/signup/step_2')
                 } else if (res.status_code == 409) {
                     setIsShowErrorMessage((prev) => ({
                         ...prev,

@@ -51,6 +51,12 @@ export default function NavigationSide() {
             "destination": "/hotels",
         },
         {
+            "name": "orders",
+            "label": "Management Pesanan",
+            "icon_name": "ic_invoice",
+            "destination": "/orders",
+        },
+        {
             "name": "transaction",
             "label": "Management Transaksi",
             "icon_name": "ic_invoice",
