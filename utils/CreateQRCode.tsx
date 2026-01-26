@@ -10,6 +10,7 @@ export default function CreateQRCODE({
             text={text}
             options={{
                 errorCorrectionLevel: 'M',
+                type : "image/webp",
                 margin: 3,
                 scale: 4,
                 width: 200,

@@ -4,18 +4,22 @@ import ActionIcon from "@/components/Icons/Action"
 import BookingIcons from "@/components/Icons/Booking"
 import HotelIcons from "@/components/Icons/Hotel"
 import Navigation from "@/components/Navigation"
+import ShowAlert from "@/components/ShowAlert"
 import { useBooking } from "@/context/Booking"
 import { OrderRoom, TypeRoom } from "@/models/Room"
+import { ShowAlertProps } from "@/models/ShowAlertProps"
 import Api from "@/utils/Api"
 import convertNumberIntoIDR from "@/utils/ConvertNumberToIDR"
 import CreateQueryFindHotels from "@/utils/CreateQueryFindHotels"
 import GetLabelDate from "@/utils/GetLabelDate"
 import GetTotalNights from "@/utils/GetTotalNight"
 import { getCurrentPriceLabel, totalRoomsLabel } from "@/utils/HotelPrice"
+import SetShowAlertStateAction from "@/utils/SetShowAlert"
 import Image from "next/image"
 import Link from "next/link"
 import { useParams, useRouter, useSearchParams } from "next/navigation"
 import { useEffect, useRef, useState } from "react"
+
 
 interface FeedbackHotel {
     id: number
@@ -128,7 +132,9 @@ export default function DetailHotel() {
 
     const [orders, setOrders] = useState<OrderRoom[] | []>([])
 
-    const [showAlert, setShowAlert] = useState<boolean>(false)
+    // const [showAlert, setShowAlert] = useState<boolean>(false)
+
+    const [showAlertProps, setShowAlertProps] = useState<ShowAlertProps>()
 
     const [showPopUp, setShowPopUp] = useState({
         feedbacks: false,
@@ -142,6 +148,31 @@ export default function DetailHotel() {
         try {
             const { data, status } = await Api().get(`/hotels/${id}?${CreateQueryFindHotels(bookingDate)}`)
             if (status == 200) setDataHotel(data.data)
+            const { type_rooms } = data.data as DetailHotel
+            if (!type_rooms || !type_rooms.length) {
+                SetShowAlertStateAction({
+                    title: "Tidak Dapat Menemukan Kamar Yang Tersedia",
+                    description: "Kami tidak dapat menemukan kamar yang tersedia yang sesuai dengan permintaan kamu!",
+                    actions: [
+                        {
+                            label: "Saya ingin merubah data pemesana kamar",
+                            handler: () => {
+                                setShowPopUp(prev => {
+                                    return {
+                                        ...prev,
+                                        ... {
+                                            booking: true
+                                        }
+                                    }
+                                })
+                            },
+                        }
+                    ],
+                    category: "information",
+                    iShowed: true
+                }, setShowAlertProps)
+            }
+
         } catch {
             setDataHotel(null)
         }
@@ -171,14 +202,12 @@ export default function DetailHotel() {
 
     const totalNights = GetTotalNights(bookingDate.checkIn, bookingDate.checkOut)
 
-
-
     return <div className="w-full min-h-dvh flex flex-col font-inter">
         <Navigation />
         {/* detail hotel will be here... */}
         {dataHotel && <div className="flex flex-col p-4 gap-6">
 
-            {/* alert */}
+            {/* alert
             {showAlert ? <div className="w-full h-dvh flex items-center justify-center fixed top-0 left-0 z-30">
                 <div className="min-w-150 flex flex-col items-center gap-2.5 border-4 min-h-20 bg-white rounded-xl p-5">
                     <ActionIcon className="w-15 h-15 text-(--status-done)" name="success_outline" />
@@ -205,7 +234,16 @@ export default function DetailHotel() {
                         >Tidak, Arahkan Saya Ke Pembayaran</button>
                     </div>
                 </div>
-            </div> : <></>}
+            </div> : <></>} */}
+
+            {showAlertProps && showAlertProps.iShowed && <ShowAlert
+                title={showAlertProps.title}
+                description={showAlertProps.description}
+                actions={showAlertProps.actions}
+                category={showAlertProps.category}
+                setShowedAlertProps={setShowAlertProps}
+                closeAction={showAlertProps.closeAction}
+            />}
 
             <span>Home/ Hotels/ {dataHotel?.name}</span>
 
@@ -832,7 +870,31 @@ export default function DetailHotel() {
                                                     }
                                                 })
                                             }
-                                            setShowAlert(true)
+                                            SetShowAlertStateAction({
+                                                title: "Berhasil Menambahkan Kamar Kedalam Pemesanan",
+                                                description: "Apakah kamu ingin menambahkan kamar lain, kedalam pemesanan?",
+                                                category: "success",
+                                                actions: [
+                                                    {
+                                                        label: "Saya ingin menambahkan kamar lain",
+                                                        handler: () => { }
+                                                    }
+                                                ],
+                                                closeAction: {
+                                                    label: "Tidak, arahkan saya ke dalam pemesanan kamar",
+                                                    handler: () => {
+                                                        setShowPopUp(prev => {
+                                                            return {
+                                                                ...prev,
+                                                                ...{
+                                                                    orders: true
+                                                                }
+                                                            }
+                                                        })
+                                                    }
+                                                },
+                                                iShowed: true
+                                            }, setShowAlertProps)
                                         }}
                                     >Pilih Kamar</button>
                                 </div>
@@ -955,7 +1017,31 @@ export default function DetailHotel() {
                                         })
                                     }
                                     setCurrentRoom(null);
-                                    setShowAlert(true)
+                                    SetShowAlertStateAction({
+                                        title: "Berhasil Menambahkan Kamar Kedalam Pemesanan",
+                                        description: "Apakah kamu ingin menambahkan kamar lain, kedalam pemesanan?",
+                                        category: "success",
+                                        actions: [
+                                            {
+                                                label: "Saya ingin menambahkan kamar lain",
+                                                handler: () => { }
+                                            }
+                                        ],
+                                        closeAction: {
+                                            label: "Tidak, arahkan saya ke dalam pemesanan kamar",
+                                            handler: () => {
+                                                setShowPopUp(prev => {
+                                                    return {
+                                                        ...prev,
+                                                        ...{
+                                                            orders: true
+                                                        }
+                                                    }
+                                                })
+                                            }
+                                        },
+                                        iShowed: true
+                                    }, setShowAlertProps)
                                 }
                                 }
                             >Pesan Kamar</button>

@@ -5,6 +5,7 @@ import { useBooking } from "@/context/Booking";
 import Api from "@/utils/Api";
 import convertNumberIntoIDR from "@/utils/ConvertNumberToIDR";
 import CreateQRCODE from "@/utils/CreateQRCode";
+import DownloadQRCodeHandler from "@/utils/DonwloadQRCodeHandler";
 import GetLabelDate from "@/utils/GetLabelDate";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
@@ -308,7 +309,9 @@ export default function DetailHistory() {
                             </div>
                         </div>
 
-                        <div className="flex flex-col items-center gap-4 py-2 border-b-2 border-background">
+                        <div className="flex flex-col items-center gap-4 py-2 border-b-2 border-background"
+                            id={`booking-${booking.id}-${index}`}
+                        >
                             <div className="flex flex-col items-center gap-2.5">
                                 <div className="w-max flex justify-center items-center bg-(--status-refund) p-2 rounded-lg">
                                     <ActionIcon className="w-5 h-5 text-background" name="scan" />
@@ -319,7 +322,9 @@ export default function DetailHistory() {
                                 <span className="text-sm">Tunjukkan QR Code Ini Untuk Administrasi</span>
                             </div>
                             <CreateQRCODE text={booking.id.toString()} />
-                            <button className="w-full bg-(--status-refund) text-background font-medium p-2 rounded-lg cursor-pointer">Download QR CODE</button>
+                            <button className="w-full bg-(--status-refund) text-background font-medium p-2 rounded-lg cursor-pointer"
+                                onClick={() => DownloadQRCodeHandler(`booking-${booking.id}-${index}`, booking.person_name + "-booking-id-" + booking.id) }
+                            >Download QR CODE</button>
                         </div>
 
                     </div>

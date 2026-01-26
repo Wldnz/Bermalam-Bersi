@@ -2,13 +2,12 @@
 import ActionIcon from "@/components/Icons/Action";
 import BookingIcons from "@/components/Icons/Booking";
 import Navigation from "@/components/Navigation";
-import { useBooking } from "@/context/Booking";
 import Api from "@/utils/Api";
 import convertNumberIntoIDR from "@/utils/ConvertNumberToIDR";
 import GetLabelDate from "@/utils/GetLabelDate";
 import Image from "next/image";
 import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 
 interface HistoryTransactionProps {

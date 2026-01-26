@@ -6,8 +6,8 @@ import Api from "@/utils/Api";
 import LoginOrRegisterWithGoogle from "@/utils/LoginOrRegisterWithGoogle";
 import Image from "next/image";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useEffect, useState } from "react";
 
 interface LoginData {
     email: string
@@ -21,6 +21,9 @@ export default function AuthPage() {
 
     const router = useRouter()
 
+    const searchParams = useSearchParams()
+    const redirectURL = searchParams.get("redirect_url") ?? "/";
+
     const [showPassword, setShowPassword] = useState<boolean>(false)
 
     const [ credential, setCredential ] = useState<LoginData>( {
@@ -33,10 +36,6 @@ export default function AuthPage() {
     const [ successMessage, setSuccessMessage ] = useState<string>("")
 
     const { user, saveUser } = useBooking()
-
-    if (user) {
-        router.push("/")
-    }
 
     const fetchingData = async() => {
         try{
@@ -59,6 +58,12 @@ export default function AuthPage() {
         }
     }
 
+
+    useEffect(() => {
+        if(user){
+            router.push(redirectURL ?? "/")
+        }
+    }, [router, user, redirectURL])
 
     return <div className="w-full min-h-dvh p-5 py-8 flex gap-3 bg-white rounded-lg">
         <div className="flex flex-col justify-between gap-2.5 p-2">
