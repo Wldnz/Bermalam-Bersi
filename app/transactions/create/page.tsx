@@ -374,13 +374,13 @@ export default function CreateTransactionPage({ }) {
                         </div>
                         <div className="flex gap-3 text-background">
                             <Link
-                                href={"/auth/sign-up"}
+                                href={"/auth/sign-up?redirect_url=/transaction/create"}
                                 className="cursor-pointer"
                                 type="button"
                             >Daftar</Link>
                             <span> | </span>
                             <Link
-                                href={"/auth/sign-in"}
+                                href={"/auth/sign-in?redirect_url=/transaction/create"}
                                 className="cursor-pointer"
                                 type="button"
                             >Login</Link>

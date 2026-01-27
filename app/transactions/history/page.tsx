@@ -5,6 +5,8 @@ import Navigation from "@/components/Navigation";
 import Api from "@/utils/Api";
 import convertNumberIntoIDR from "@/utils/ConvertNumberToIDR";
 import GetLabelDate from "@/utils/GetLabelDate";
+import { GetStatusAttributeTransaction } from "@/utils/GetStatusAtrribute";
+import { Artifika } from "next/font/google";
 import Image from "next/image";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
@@ -36,12 +38,12 @@ export default function HistoryTransaction() {
     // const router = useRouter()
 
     // const { user } = useBooking()
-    
-    const searchParams = useSearchParams() 
 
-    const [ currentIndex, setCurrentIndex ] = useState<number>(
-        Number(searchParams.get("index") ?? 1   )
-    ) 
+    const searchParams = useSearchParams()
+
+    const [currentIndex, setCurrentIndex] = useState<number>(
+        Number(searchParams.get("index") ?? 1)
+    )
 
 
     const [histories, setHistories] = useState<HistoryTransactionProps[] | []>([])
@@ -94,6 +96,7 @@ export default function HistoryTransaction() {
         </div>
         <div className="w-full flex flex-col gap-5 p-5 mt-4">
             {histories.map((history, index) => {
+                const statusAttribute = GetStatusAttributeTransaction(history.status)
                 return <div className="w-full flex gap-4" key={`index-history-${index + 1}`}>
                     <Image
                         className="w-100 rounded-lg"
@@ -131,9 +134,9 @@ export default function HistoryTransaction() {
                         </div>
                     </div>
                     <div className="bg-red-200h-full flex flex-col items-end justify-between">
-                        <div className="w-max flex items-center gap-1 border-(--status-refund) border-2 p-1 px-3 rounded-lg">
-                            {/* <BookingIcons className="w-5 h-5 text-(--status-refund)" name="clos" /> */}
-                            <span className="text-(--status-refund)">{history.status}</span>
+                        <div className={`w-max flex items-center gap-1 ${statusAttribute.className} border-2 p-1 px-3 rounded-lg`}>
+                            <ActionIcon className="w-5 h-5" name={statusAttribute.iconName} />
+                            <span>{statusAttribute.label}</span>
                         </div>
                         <Link
                             className="w-max flex flex-col gap-1.5"
@@ -149,23 +152,23 @@ export default function HistoryTransaction() {
         <div className="w-full flex justify-end items-center p-2">
             <div className="flex items-center gap-2.5">
                 <button className="w-max h-max p-1 flex justify-center items-center bg-(--status-refund) text-background cursor-pointer rounded-lg"
-                     onClick={() => setCurrentIndex(prev => {
+                    onClick={() => setCurrentIndex(prev => {
                         const newIndex = prev - 1
-                        if(prev <= 0){
+                        if (prev <= 0) {
                             return prev
                         }
                         return newIndex
-                     })}
+                    })}
                 >
                     <ActionIcon className="w-6 h-6 text-(--background) rotate-180" name="arrow-right" />
                 </button>
-                <div 
+                <div
                     className="w-8 h-8 p-2  flex items-center justify-center text-lg border-2 border-(--status-refund) text-center outline-none rounded-sm"
                 >
                     {currentIndex}
                 </div>
                 <button className="w-max h-max p-1 flex justify-center items-center bg-(--status-refund) text-background cursor-pointer rounded-lg"
-                    onClick={() => setCurrentIndex(prev => prev +1)}
+                    onClick={() => setCurrentIndex(prev => prev + 1)}
                 >
                     <ActionIcon className="w-6 h-6 text-(--background)" name="arrow-right" />
                 </button>
@@ -173,3 +176,4 @@ export default function HistoryTransaction() {
         </div>
     </div>
 }
+

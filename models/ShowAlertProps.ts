@@ -7,9 +7,7 @@ export interface ShowAlertProps {
     actions?: ActionButtonProps[]
     closeAction?: CloseActionButtonProps
     iShowed? : boolean
-    setShowedAlertProps? : Dispatch<SetStateAction<ShowAlertProps | undefined>>
 }
-
 export interface ActionButtonProps {
     label: string
     handler: () => void

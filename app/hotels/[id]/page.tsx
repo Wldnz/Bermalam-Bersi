@@ -1,13 +1,20 @@
 "use client"
 import { BookingState } from "@/components/FindHotel/models"
+import HotelAddress from "@/components/Hotel/HotelAddress"
+import HotelFacilities from "@/components/Hotel/HotelFacilities"
+import HotelFaqs from "@/components/Hotel/HotelFaqs"
+import HotelFeedbacks from "@/components/Hotel/HotelFeedbacks"
 import ActionIcon from "@/components/Icons/Action"
 import BookingIcons from "@/components/Icons/Booking"
 import HotelIcons from "@/components/Icons/Hotel"
 import Navigation from "@/components/Navigation"
 import ShowAlert from "@/components/ShowAlert"
 import { useBooking } from "@/context/Booking"
+import { Faqs } from "@/models/Faqs"
+import { FeedbackHotel } from "@/models/HotelFeedbacks"
 import { OrderRoom, TypeRoom } from "@/models/Room"
 import { ShowAlertProps } from "@/models/ShowAlertProps"
+import ShowPopupProps from "@/models/ShowPopup"
 import Api from "@/utils/Api"
 import convertNumberIntoIDR from "@/utils/ConvertNumberToIDR"
 import CreateQueryFindHotels from "@/utils/CreateQueryFindHotels"
@@ -19,18 +26,6 @@ import Image from "next/image"
 import Link from "next/link"
 import { useParams, useRouter, useSearchParams } from "next/navigation"
 import { useEffect, useRef, useState } from "react"
-
-
-interface FeedbackHotel {
-    id: number
-    guest_name: string
-    value: string
-    category: string
-    stars: string
-    created_at: string
-    room_names: string
-}
-
 
 
 interface DetailRoom {
@@ -86,11 +81,7 @@ interface DetailHotel {
 
     feedbacks: FeedbackHotel[]
 
-    faqs: {
-        id: number
-        question: string
-        answer: string
-    }[]
+    faqs: Faqs[]
 }
 
 export default function DetailHotel() {
@@ -102,9 +93,6 @@ export default function DetailHotel() {
     const searchParams = useSearchParams()
 
     const currentTime = new Date().getTime()
-
-    const checkInRef = useRef(null)
-    const checkOutRef = useRef(null)
 
     const bookingContext = useBooking();
 
@@ -124,8 +112,6 @@ export default function DetailHotel() {
 
     const [dataHotel, setDataHotel] = useState<DetailHotel | null>(null)
 
-    const [currentFeedback, setCurrentFeedback] = useState<FeedbackHotel | null>(null)
-
     const [currentRoom, setCurrentRoom] = useState<TypeRoom | null>(null)
 
     const [detailRoom, setDetailRoom] = useState<DetailRoom | null>(null)
@@ -136,8 +122,7 @@ export default function DetailHotel() {
 
     const [showAlertProps, setShowAlertProps] = useState<ShowAlertProps>()
 
-    const [showPopUp, setShowPopUp] = useState({
-        feedbacks: false,
+    const [showPopUp, setShowPopUp] = useState<ShowPopupProps>({
         booking: false,
         orders: false,
         guests: false,
@@ -207,245 +192,16 @@ export default function DetailHotel() {
         {/* detail hotel will be here... */}
         {dataHotel && <div className="flex flex-col p-4 gap-6">
 
-            {/* alert
-            {showAlert ? <div className="w-full h-dvh flex items-center justify-center fixed top-0 left-0 z-30">
-                <div className="min-w-150 flex flex-col items-center gap-2.5 border-4 min-h-20 bg-white rounded-xl p-5">
-                    <ActionIcon className="w-15 h-15 text-(--status-done)" name="success_outline" />
-                    <div className="flex flex-col items-center gap-1">
-                        <h2 className="font-bold text-xl">Berhasil Menambahkan Pemesanan</h2>
-                        <span className="text-sm">Apakah anda ingin menambahkan kamar lain?</span>
-                    </div>
-                    <div className="w-full flex flex-col gap-2.5">
-                        <button className="w-full p-3 font-bold text-background bg-foreground rounded-lg cursor-pointer"
-                            onClick={() => setShowAlert(false)}
-                        >Ya, Saya ingin menambahkan Kamar Lain</button>
-                        <button className="w-full p-3 font-bold text-foreground bg-background rounded-lg cursor-pointer"
-                            onClick={() => {
-                                setShowAlert(false)
-                                setShowPopUp(prev => {
-                                    return {
-                                        ...prev,
-                                        ...{
-                                            orders: true
-                                        }
-                                    }
-                                })
-                            }}
-                        >Tidak, Arahkan Saya Ke Pembayaran</button>
-                    </div>
-                </div>
-            </div> : <></>} */}
-
             {showAlertProps && showAlertProps.iShowed && <ShowAlert
-                title={showAlertProps.title}
-                description={showAlertProps.description}
-                actions={showAlertProps.actions}
-                category={showAlertProps.category}
+                showedAlertProps={showAlertProps}
                 setShowedAlertProps={setShowAlertProps}
-                closeAction={showAlertProps.closeAction}
             />}
 
             <span>Home/ Hotels/ {dataHotel?.name}</span>
 
             {/* summary booking date */}
-            <div className="w-80 p-3 flex flex-col gap-2.5 bg-white border-3 border-(--status-refund) fixed top-10 right-0 rounded-lg rounded-bl-none">
-                <span className="">Ringkasan Kunjungan Anda!</span>
-                {showPopUp.booking && <div className="flex flex-col gap-3">
-                    <div className="flex flex-col gap-1.5 relative">
-                        <h4 className="font-bold">Check-In</h4>
-                        <button className="w-max p-2 flex items-center gap-1 border-2 border-(--status-refund) rounded-lg cursor-pointer"
-                            onClick={() => {
-                                if (checkInRef.current && (checkInRef.current as HTMLInputElement).showPicker) {
-                                    (checkInRef.current as HTMLInputElement).showPicker()
-                                }
-                            }}
-                        >
-                            <BookingIcons className="w-7 h-7 text-(--status-refund)" name="check_in" />
-                            <span>{GetLabelDate(new Date(bookingDate.checkIn))}</span>
-                        </button>
-                        <input
-                            className="absolute top-0 left-0 opacity-0"
-                            type="date"
-                            onChange={(e) => setBookingDate(prev => {
-                                return {
-                                    ...prev,
-                                    ...{
-                                        checkIn: new Date(e.target.value).getTime()
-                                    }
-                                }
-                            })}
-                            value={(new Date(bookingDate.checkIn)).toISOString().split("T")[0]}
-                            ref={checkInRef}
-                        />
-                    </div>
-                    <div className="flex flex-col gap-1.5">
-                        <h4 className="font-bold">Check-Out</h4>
-                        <button className="w-max p-2 flex items-center gap-1 border-2 border-(--status-refund) rounded-lg cursor-pointer"
-                            onClick={() => {
-                                if (checkOutRef.current && (checkOutRef.current as HTMLInputElement).showPicker) {
-                                    (checkOutRef.current as HTMLInputElement).showPicker()
-                                }
-                            }}
-                        >
-                            <BookingIcons className="w-7 h-7 text-(--status-refund)" name="check_out" />
-                            <span>{GetLabelDate(new Date(bookingDate.checkOut))}</span>
-                        </button>
-                        <input
-                            className="absolute top-0 left-0 opacity-0"
-                            type="date"
-                            onChange={(e) => setBookingDate(prev => {
-                                return {
-                                    ...prev,
-                                    ...{
-                                        checkOut: new Date(e.target.value).getTime()
-                                    }
-                                }
-                            })}
-                            value={(new Date(bookingDate.checkOut)).toISOString().split("T")[0]}
-                            ref={checkOutRef}
-                        />
-                    </div>
-                    <div className="flex flex-col gap-1.5 relative">
-                        <h4 className="font-bold">Tamu</h4>
-                        <button className="w-max p-2 flex items-center gap-1 border-2 border-(--status-refund) rounded-lg cursor-pointer"
-                            onClick={() => setShowPopUp(prev => {
-                                return {
-                                    ...prev,
-                                    ...{
-                                        guests: !prev.guests,
-                                        rooms: false
-                                    }
-                                }
-                            })}
-                        >
-                            <BookingIcons className="w-7 h-7 text-(--status-refund)" name="adult" />
-                            <span>{bookingDate.guests.adults} Dewasa, {bookingDate.guests.childrens} Anak - Anak</span>
-                        </button>
-                        <div className={`w-full min-h-3 p-2 ${showPopUp.booking && showPopUp.guests ? "flex" : "hidden"} flex-col gap-2.5 bg-background border-2 border-(--status-refund) rounded-lg absolute top-20 left-0 z-10`}>
-
-                            <div className="flex flex-col gap-1.5">
-                                <label htmlFor="adults" className="text-sm text-start">Dewasa</label>
-                                <div className="flex justify-center items-center gap-2.5">
-                                    <div className="p-1 h-7 flex justify-center items-center rounded-lg border-2 border-(--status-refund)">
-                                        <BookingIcons
-                                            name="adult"
-                                            className="w-4 h-4 text-(--status-refund)"
-                                        />
-                                    </div>
-                                    <input type="number" min={1}
-                                        className="w-full h-7 p-0.5 px-1 border-2 border-(--status-refund) rounded-lg outline-none" id="adults"
-                                        placeholder=""
-                                        aria-describedby="Masukkan total orang dewasa, adults, tamu"
-                                        onChange={(e) => setBookingDate(prev => {
-                                            return {
-                                                ...prev,
-                                                ...{
-                                                    guests: {
-                                                        adults: Number(e.target.value) ? Number(e.target.value) : 1,
-                                                        childrens: bookingDate.guests.childrens
-                                                    }
-                                                }
-                                            }
-                                        })}
-                                        value={bookingDate.guests.adults}
-                                    />
-                                </div>
-                            </div>
-
-                            <div className="flex flex-col gap-1.5 relative">
-                                <label htmlFor="childrens" className="text-sm text-start">Anak - Anak</label>
-                                <div className="flex justify-center items-center gap-2.5">
-                                    <div className="p-1 h-7 flex justify-center items-center rounded-lg border-2 border-(--status-refund)">
-                                        <BookingIcons
-                                            name="adult"
-                                            className="w-4 h-4 text-(--status-refund)"
-                                        />
-                                    </div>
-                                    <input type="number" min={1}
-                                        className="w-full h-7 p-0.5 px-1 border-2 border-(--status-refund) rounded-lg outline-none" id="childrens"
-                                        placeholder=""
-                                        aria-describedby="Masukkan total Anak - Anak, childrens, tamu"
-                                        onChange={(e) => setBookingDate(prev => {
-                                            return {
-                                                ...prev, ...{
-                                                    guests: {
-                                                        childrens: Number(e.target.value),
-                                                        adults: bookingDate.guests.adults
-                                                    }
-                                                }
-                                            }
-                                        })}
-                                        value={bookingDate.guests.childrens}
-                                    />
-                                </div>
-                            </div>
-
-                        </div>
-                    </div>
-                    <div className="flex flex-col gap-1.5 relative">
-                        <h4 className="font-bold">Kamar</h4>
-                        <button className="w-max p-2 flex items-center gap-1 border-2 border-(--status-refund) rounded-lg cursor-pointer"
-                            onClick={() => setShowPopUp(prev => {
-                                return {
-                                    ...prev,
-                                    ...{
-                                        rooms: !prev.rooms,
-                                        guests: false
-                                    }
-                                }
-                            })}
-                        >
-                            <BookingIcons className="w-7 h-7 text-(--status-refund)" name="room" />
-                            <span>{bookingDate.totalRooms} Kamar</span>
-                        </button>
-                        <div className={`w-full min-h-3 p-2 ${showPopUp.booking && showPopUp.rooms ? "flex" : "hidden"} flex-col gap-2.5 bg-background border-2 border-(--status-refund) rounded-lg absolute top-20 left-0 z-10`}>
-
-                            <div className="flex flex-col gap-1.5">
-                                <label htmlFor="adults" className="text-sm text-start">Total Kamar</label>
-                                <div className="flex justify-center items-center gap-2.5">
-                                    <div className="p-1 h-7 flex justify-center items-center rounded-lg border-2 border-(--status-refund)">
-                                        <BookingIcons
-                                            name="room"
-                                            className="w-4 h-4 text-(--status-refund)"
-                                        />
-                                    </div>
-                                    <input type="number" min={1}
-                                        className="w-full h-7 p-0.5 px-1 border-2 border-(--status-refund) rounded-lg outline-none" id="adults"
-                                        placeholder=""
-                                        aria-describedby="Total Kamar, Kamar, kamar yang akan digunakan"
-                                        onChange={(e) => setBookingDate(prev => {
-                                            return {
-                                                ...prev,
-                                                ...{
-                                                    totalRooms: Number(e.target.value) ? Number(e.target.value) : 1
-                                                }
-                                            }
-                                        })}
-                                        value={bookingDate.totalRooms}
-                                    />
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <button className="p-2.5 bg-(--status-refund) text-background font-bold rounded-lg cursor-pointer"
-                        onClick={() => fetchDetailHotel()}
-                    >Simpan Perubahan</button>
-                </div>}
-                <button className="w-max p-2 bg-white border-3 border-(--status-refund) rounded-lg rounded-t-none absolute -bottom-10.25 -left-[2.5px] cursor-pointer"
-                    onClick={() => {
-                        setShowPopUp(prev => {
-                            return {
-                                ...prev,
-                                ...{
-                                    booking: !prev.booking,
-                                }
-                            }
-                        })
-                    }}
-                >
-                    <ActionIcon className="w-5 h-5 text-(--status-refund)" name={showPopUp.booking ? "arrow-up" : "arrow-down"} />
-                </button>
-            </div>
+                
+            
 
             {/* cart  */}
 
@@ -720,49 +476,9 @@ export default function DetailHotel() {
                 </div>
             </div>
 
-            {dataHotel.facilities.length && <div className="flex flex-col gap-5 p-2" id="facilities">
-                <h2 className="font-bold text-xl">Fasilitas - Fasilitas Yang Dimiliki</h2>
-                <div className="flex gap-10">
-                    <div className="flex flex-col gap-4">
-                        <div className="flex items-center gap-2.5">
-                            <div className="w-7 h-7 bg-background rounded-lg"></div>
-                            <h4 className="font-bold">Hiburan Dan Komunikasi</h4>
-                        </div>
-                        <div className="flex items-center gap-2">
-                            <ActionIcon className="w-5 h-5 text-(--status-done)" name="success" />
-                            <span className="">Televesion</span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                            <ActionIcon className="w-5 h-5 text-(--status-done)" name="success" />
-                            <span className="">Televesion</span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                            <ActionIcon className="w-5 h-5 text-(--status-done)" name="success" />
-                            <span className="">Televesion</span>
-                        </div>
-                    </div>
-                    <div className="flex flex-col gap-4">
-                        <div className="flex items-center gap-2.5">
-                            <div className="w-7 h-7 bg-background rounded-lg"></div>
-                            <h4 className="font-bold">Fasilitas Umum</h4>
-                        </div>
-                        <div className="flex items-center gap-2">
-                            <ActionIcon className="w-5 h-5 text-(--status-done)" name="success" />
-                            <span className="">Televesion</span>
-                        </div>
-                    </div>
-                    <div className="flex flex-col gap-4">
-                        <div className="flex items-center gap-2.5">
-                            <div className="w-7 h-7 bg-background rounded-lg"></div>
-                            <h4 className="font-bold">Makanan Dan Sarapan</h4>
-                        </div>
-                        <div className="flex items-center gap-2">
-                            <ActionIcon className="w-5 h-5 text-(--status-done)" name="success" />
-                            <span className="">Televesion</span>
-                        </div>
-                    </div>
-                </div>
-            </div>}
+
+            {/* still need to update in here... */}
+          <HotelFacilities/>
 
             {dataHotel.type_rooms?.length ? <div className="flex flex-col gap-5" id="rooms">
                 <h2 className="font-bold text-xl">Terdapat {dataHotel.type_rooms.length} Tipe Kamar Yang Sesuai</h2>
@@ -1057,29 +773,7 @@ export default function DetailHotel() {
                 <h2 className="text-2xl">Tidak Ada Kamar Yang Tersedia...</h2>
             </div>}
 
-            <div className="flex flex-col gap-4" id="near-facility">
-                <h2 className="font-bold text-center text-3xl">Penasaran Dengan Yang Ada Disekitarnya?</h2>
-                <p className="text-lg text-center">Tenang Aja, Kami sudah menyiapkan map yang dapat membantu kamu dalam mencari tempat bermalam dan berwisata disekitarnya</p>
-                <div className="w-full h-200 bg-red-200 rounded-xl"></div>
-                <h2 className="font-bold text-2xl text-center">Baca Yukk! Biar Tahu!</h2>
-                <div className="w-full flex justify-center items-center gap-20">
-
-                    <div className="flex flex-col gap-2">
-                        <div className="flex items-center gap-2">
-                            <div className="w-6 h-6 bg-(--status-refund) rounded-lg"></div>
-                            <span>Tempat Wisata</span>
-                        </div>
-                        <span className="text-sm">Temukan tempat untuk berwisata di sekitar hotel</span>
-                    </div>
-                    <div className="flex flex-col gap-2">
-                        <div className="flex items-center gap-2">
-                            <div className="w-6 h-6 bg-(--b4) rounded-lg"></div>
-                            <span>Fasilitas Umum</span>
-                        </div>
-                        <span className="text-sm">Temukan Fasilitas - Fasilitas Umum di sekitar hotel</span>
-                    </div>
-                </div>
-            </div>
+           <HotelAddress/>
 
             <div className="flex flex-col gap-10">
                 <div className="flex flex-col gap-2.5">
@@ -1094,131 +788,16 @@ export default function DetailHotel() {
 
             <div className="w-full h-40"></div>
 
-            <div className="flex flex-col gap-20" id="feedbacks">
-                <div className="flex flex-col gap-2">
-                    <h2 className="font-bold text-center text-3xl">Kamu Mungkin Penasaran Dengan Pengalaman Tamu Sebelumbya?</h2>
-                    <p className="text-lg text-center">Dibawah ini  adalah pengalaman - pengalaman dari tamu sebelumnya!</p>
+            <HotelFeedbacks feedbacks={dataHotel.feedbacks} />
+
+            <HotelFaqs faqs={dataHotel.faqs} />
+
+            {/* untuk menampilkan hotel - hotel yang mungkin anda suka */}
+            <div className="flex flex-col gap-4">
+                <h2 className="font-bold text-xl">Kamu Mungkin Tertarik Dengan Tempat Bermalam Yang Lain</h2>
+                <div className="flex gap-2.5 flex-wrap">
+                    <div className="w-80 h-100 bg-red-200"></div>
                 </div>
-                <div className="p-8 flex flex-wrap gap-16">
-                    {dataHotel.feedbacks.map((feedback, index) => {
-                        return <div className="max-w-100 flex flex-col gap-2.5" key={feedback.guest_name + feedback.id + index}>
-                            <div className="flex justify-between gap-2">
-                                <div className="flex items-center gap-2.5">
-                                    <div className="w-10 h-10 flex justify-center items-center p-2 text-background bg-(--status-refund) rounded-full">
-                                        <span className="">{feedback.guest_name[0].toUpperCase()}</span>
-                                    </div>
-                                    <div className="flex flex-col gap-1">
-                                        <span>{feedback.guest_name}</span>
-                                        <span className="text-sm">{feedback.room_names}</span>
-                                    </div>
-                                </div>
-                                <div className="flex gap-1">
-                                    <span className="text-sm">{feedback.stars}</span>
-                                    <HotelIcons className="w-4 h-4 text-(--b4)" name="star" />
-                                </div>
-                            </div>
-                            <span className="text-sm">{feedback.value}</span>
-                            <button className="flex items-center gap-2.5 text-(--status-refund) cursor-pointer"
-                                onClick={() => {
-                                    setShowPopUp(prev => ({ ...prev, ...{ feedbacks: true } }))
-                                    setCurrentFeedback(feedback)
-                                }}
-                            >
-                                <span className="text-sm">Baca Selengkapnya</span>
-                                <ActionIcon className="w-6 h-6" name="read_book" />
-                            </button>
-                        </div>
-                    })}
-                </div>
-
-                {showPopUp.feedbacks && <div className="w-full min-h-dvh flex justify-center items-center p-4 fixed top-0 left-0">
-                    <div className="w-full p-4 border-2 border-(--status-refund) flex flex-col gap-5 bg-white rounded-lg">
-                        <div className="flex justify-between items-center">
-                            <span>Baca Selengkapnya Terkait Pengalaman Tamu</span>
-                            <button className="flex items-center gap-1 text-(--status-refund) cursor-pointer"
-                                onClick={() => {
-                                    setShowPopUp(prev => ({ ...prev, ...{ feedbacks: false } }))
-                                }}
-                            >
-                                <span className="text-sm">Close</span>
-                                <ActionIcon className="w-5 h-5" name="close_tight" />
-                            </button>
-                        </div>
-                        <div className="flex flex-col gap-10 p-2">
-                            <div className="w-full flex flex-col gap-5 bg-background p-2 rounded-lg">
-                                <div className="flex justify-between gap-2">
-                                    <div className="flex items-center gap-2.5">
-                                        <div className="w-10 h-10 flex justify-center items-center p-2 text-background bg-(--status-refund) rounded-full">
-                                            <span className="">{currentFeedback?.guest_name[0].toUpperCase()}</span>
-                                        </div>
-                                        <div className="flex flex-col gap-1">
-                                            <span>{currentFeedback?.guest_name}</span>
-                                            <span className="text-sm">{currentFeedback?.room_names}</span>
-                                        </div>
-                                    </div>
-                                    <div className="flex gap-1">
-                                        <span className="text-sm">{currentFeedback?.stars}</span>
-                                        <HotelIcons className="w-4 h-4 text-(--b4)" name="star" />
-                                    </div>
-                                </div>
-                                <span className="text-sm">{currentFeedback?.value}</span>
-                            </div>
-                        </div>
-                        <div className="w-full flex overflow-x-scroll">
-                            {dataHotel.feedbacks.map((feedback, index) => {
-                                return <button className="min-w-50 min-h-25 max-w-100 flex flex-col gap-2.5 cursor-pointer text-start" key={feedback.guest_name + feedback.id + index}
-                                    onClick={() => {
-                                        setCurrentFeedback(feedback)
-                                    }}
-                                >
-                                    <div className="flex justify-between gap-2">
-                                        <div className="flex items-center gap-2.5">
-                                            <div className="w-10 h-10 flex justify-center items-center p-2 text-background bg-(--status-refund) rounded-full">
-                                                <span className="">{feedback.guest_name[0].toUpperCase()}</span>
-                                            </div>
-                                            <div className="flex flex-col gap-1 ">
-                                                <span>{feedback.guest_name}</span>
-                                                <span className="text-sm">{feedback.room_names}</span>
-                                            </div>
-                                        </div>
-                                        <div className="flex gap-1">
-                                            <span className="text-sm">{feedback.stars}</span>
-                                            <HotelIcons className="w-4 h-4 text-(--b4)" name="star" />
-                                        </div>
-                                    </div>
-                                    <span className="text-sm">{feedback.value}</span>
-                                </button>
-                            })}
-                        </div>
-                    </div>
-                </div>}
-
-                {dataHotel.faqs.length && <div className="flex flex-col gap-4" id="faqs">
-                    <h2 className="font-bold text-xl">Pertanyaan - Pertanyaan Yang Sering Diajukan</h2>
-                    <div className="flex flex-col gap-4">
-                        {dataHotel.faqs.map((faq, index) => {
-                            return <details className="group cursor-pointer" key={`${faq.id + index} + ${faq.answer}`}>
-                                <summary className="p-3 flex justify-between items-center bg-(--status-refund) text-background rounded-lg outline-none group-open:rounded-b-none">
-                                    <span className="text-lg font-bold">{faq.question}</span>
-                                    <div>
-                                        <ActionIcon className="w-7 h-7 text-background group-open:hidden" name="positive" />
-                                        <ActionIcon className="w-7 h-7 text-background hidden group-open:block" name="negative" />
-                                    </div>
-                                </summary>
-                                <p className="p-4 bg-background group-open:rounded-b-lg">{faq.answer}</p>
-                            </details>
-                        })}
-                    </div>
-                </div>}
-                {/* untuk menampilkan hotel - hotel yang mungkin anda suka */}
-                <div className="flex flex-col gap-4">
-                    <h2 className="font-bold text-xl">Kamu Mungkin Tertarik Dengan Tempat Bermalam Yang Lain</h2>
-                    <div className="flex gap-2.5 flex-wrap">
-                        <div className="w-80 h-100 bg-red-200"></div>
-                    </div>
-                </div>
-
-
             </div>
 
         </div>

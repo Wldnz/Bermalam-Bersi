@@ -1,12 +1,17 @@
 "use client"
 import ActionIcon from "@/components/Icons/Action";
 import Navigation from "@/components/Navigation";
+import ShowAlert from "@/components/ShowAlert";
 import { useBooking } from "@/context/Booking";
+import { ShowAlertProps } from "@/models/ShowAlertProps";
+import StatusTransactionOrBookingProps from "@/models/StatusTransactionOrBooking";
 import Api from "@/utils/Api";
 import convertNumberIntoIDR from "@/utils/ConvertNumberToIDR";
 import CreateQRCODE from "@/utils/CreateQRCode";
 import DownloadQRCodeHandler from "@/utils/DonwloadQRCodeHandler";
 import GetLabelDate from "@/utils/GetLabelDate";
+import { GetStatusAttribuBooking, GetStatusAttributeTransaction } from "@/utils/GetStatusAtrribute";
+import SetShowAlertStateAction from "@/utils/SetShowAlert";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -70,7 +75,10 @@ export default function DetailHistory() {
 
     const [transaction, setTransaction] = useState<DetailTransaction>()
 
-    const router = useRouter()
+    const [statusTransaction, setStatusTransaction] = useState<StatusTransactionOrBookingProps | null>(null)
+
+
+    const [ currentAdditionalRequest, setCurrentAdditionalRequest ] = useState<ShowAlertProps | undefined>()
 
     const { id } = useParams()
 
@@ -80,13 +88,15 @@ export default function DetailHistory() {
         const fetchTransactions = async () => {
             try {
                 const { data } = await Api().get(`/transactions/${id}`)
-                setTransaction(data.data)
+                const dataHotel = data.data as DetailTransaction
+                setTransaction(dataHotel)
+                setStatusTransaction(GetStatusAttributeTransaction(dataHotel.transaction.status))
             } catch {
                 setTransaction(undefined)
             }
         }
         fetchTransactions()
-    }, [])
+    }, [id])
 
 
 
@@ -99,6 +109,12 @@ export default function DetailHistory() {
 
     return <div className="w-full min-h-dvh flex flex-col font-inter bg-background">
         <Navigation />
+
+       { currentAdditionalRequest && currentAdditionalRequest.iShowed &&  <ShowAlert
+            showedAlertProps={currentAdditionalRequest}
+            setShowedAlertProps={setCurrentAdditionalRequest}
+        /> }
+
         <div className="w-full h-10"></div>
         <div className="w-full flex justify-center min-h-dvh p-5">
 
@@ -112,10 +128,10 @@ export default function DetailHistory() {
                                 <h2 className="font-medium text-xl">Ringkasan Pemesanan Hotel</h2>
                                 <span className="text-sm">#{transaction.transaction.id}</span>
                             </div>
-                            <div className={`flex items-center gap-2.5 p-2 border-2 border-(--status-wait ) ${transaction.transaction.status == "paid" ? "text-(--status-done)" : "text-(--status-wait)"} rounded-lg`}>
-                                {transaction.transaction.status == "paid" ? <ActionIcon className="w-6 h-6" name="success" /> : <ActionIcon className="w-6 h-6" name="date-timeout" />}
-                                <span className="font-bold">{transaction.transaction.status == "paid" ? "Berhasil Dibayar!" : transaction.transaction.status}</span>
-                            </div>
+                            {statusTransaction && <div className={`flex items-center gap-2.5 p-1 px-2 border-2 ${statusTransaction.className} rounded-lg`}>
+                                <ActionIcon className="w-6 h-6" name={statusTransaction.iconName} />
+                                <span className="font-bold">{ statusTransaction.label }</span>
+                            </div>}
                         </div>
 
                         <div className="w-full flex justify-between py-2">
@@ -247,11 +263,11 @@ export default function DetailHistory() {
                                 <button className="w-full bg-(--status-refund) text-background font-bold p-3 rounded-lg cursor-pointer text-center">
                                     Download Dokumen Pembayaran
                                 </button>
-                                <Link className="w-full bg-(--status-refund) text-background font-bold p-3 rounded-lg cursor-pointer text-center"
+                                {/* <Link className="w-full bg-(--status-refund) text-background font-bold p-3 rounded-lg cursor-pointer text-center"
                                     href={"#booking-sectio"}
                                 >
                                     Lihat QR CODE
-                                </Link>
+                                </Link> */}
                             </div>
                             <button className="w-full border-2 border-(--status-refund) text-(--status-refund) bg-background font-bold p-3 rounded-lg cursor-pointer text-center">
                                 Buat Permintaan Pembatalan Transaksi
@@ -269,14 +285,15 @@ export default function DetailHistory() {
             id="booking-sectio"
         >
             {transaction.bookings.map((booking, index) => {
+                const statusBookingAttribute = GetStatusAttribuBooking(booking.status)
                 return <div className="flex flex-col rounded-lg bg-white p-5" key={`booking-${booking.id}-${index}`}>
 
                     <div className="min-w-100 flex flex-col gap-2.5 border-b-2 border-background">
                         <div className="flex flex-col gap-2">
                             <h2 className="font-bold text-xl">Detail Kamar Hotel #{index + 1}</h2>
-                            <div className="w-max flex items-center gap-2.5 rounded-lg border-2 border-(--status-wait) p-1.5 text-(--status-wait)">
-                                {/* <ActionIcon className="w-5 h-5" name="success" /> */}
-                                <span className="font-bold text-sm">{booking.status == "pending" ? "Menunggu Tamu" : booking.status}</span>
+                            <div className={`w-max flex items-center gap-2.5 rounded-lg border-2 ${statusBookingAttribute.className} p-1.5`}>
+                                <ActionIcon className="w-5 h-5" name={statusBookingAttribute.iconName} />
+                                <span className="font-bold text-sm">{statusBookingAttribute.label}</span>
                             </div>
                         </div>
                         <div className="flex flex-col gap-2.5 py-2 border-b-2 border-background">
@@ -294,7 +311,15 @@ export default function DetailHistory() {
                             </div>
                             <div className="w-full flex justify-between items-center">
                                 <span className="text-sm">Permintaan Tambahan</span>
-                                <button className="text-sm text-(--status-refund) cursor-pointer">Lihat Permintaan Tambahan</button>
+                                <button className="text-sm text-(--status-refund) cursor-pointer"
+                                    onClick={() => SetShowAlertStateAction({
+                                        title: "Permitan Tambahan",
+                                        description: booking.note? booking.note : `${booking.person_name} Tidak Memiliki Permintaan Tambahan`,
+                                        category:"information",
+                                        actions : [],
+                                        iShowed : true,
+                                    }, setCurrentAdditionalRequest)}
+                                >Lihat Permintaan Tambahan</button>
                             </div>
                         </div>
                         <div className="flex flex-col gap-2.5 py-2 border-b-2 border-background">
@@ -323,7 +348,7 @@ export default function DetailHistory() {
                             </div>
                             <CreateQRCODE text={booking.id.toString()} />
                             <button className="w-full bg-(--status-refund) text-background font-medium p-2 rounded-lg cursor-pointer"
-                                onClick={() => DownloadQRCodeHandler(`booking-${booking.id}-${index}`, booking.person_name + "-booking-id-" + booking.id) }
+                                onClick={() => DownloadQRCodeHandler(`booking-${booking.id}-${index}`, booking.person_name + "-booking-id-" + booking.id)}
                             >Download QR CODE</button>
                         </div>
 

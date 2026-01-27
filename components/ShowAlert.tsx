@@ -5,7 +5,12 @@ import { ShowAlertProps } from "@/models/ShowAlertProps"
 import SetShowAlertStateAction from "@/utils/SetShowAlert"
 
 
-export default function ShowAlert({ title, category, description, actions, closeAction, setShowedAlertProps }: ShowAlertProps) {
+export default function ShowAlert({ showedAlertProps, setShowedAlertProps } : {
+    showedAlertProps : ShowAlertProps,
+    setShowedAlertProps : Dispatch<SetStateAction<ShowAlertProps | undefined>>
+}) {
+
+    const { title, category, description, actions, closeAction } = showedAlertProps
 
     const [showAlert, setShowAlert] = useState<boolean>(true)
 
