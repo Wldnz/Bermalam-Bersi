@@ -91,6 +91,7 @@ func InitiliazeApi(g *gin.Engine) {
 
 	g.GET("/vouchers", guest_discount.GetDiscounts)
 	g.GET("/vouchers/users", guest_discount.GetVoucherUser)
+	g.GET("/vouchers/used", guest_discount.GetUsedVouchers)
 
 	g.POST("/check-price", guest_transactions.CheckPrice)
 
