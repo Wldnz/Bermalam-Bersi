@@ -8,6 +8,7 @@ import BookingIcons from "./Icons/Booking";
 import ActionIcon from "./Icons/Action";
 import { useBooking } from "@/context/Booking";
 import Api from "@/utils/Api";
+import { useUser } from "@/context/UserContext";
 
 interface NavigationLinkProps {
     name: string,
@@ -64,23 +65,12 @@ function NavigationBar({
 
     const pathName = usePathname()
 
-    const router = useRouter()
 
     const [showNavigation, setShowNavigation] = useState<boolean>(true)
 
     const [ showSettings,  setShowSettings ] = useState<boolean>(false)
 
-    const { user } = useBooking()
-
-    const HandleLogout = async() => {
-        try{
-            const { status } = await Api().get("/logout")
-            router.refresh()
-            setShowSettings(false)
-        }catch{
-
-        }
-    }
+    const { user, Logout } = useUser()
 
     return <div className="flex justify-between items-center">
 
@@ -174,7 +164,7 @@ function NavigationBar({
                     </Link>
                 </>}
                 {user && <button className="w-max flex items-center gap-1.5 cursor-pointer"
-                    onClick={HandleLogout}
+                    onClick={Logout}
                 >
                     <ActionIcon className="w-6 h-6" name="sign-in" />
                     <span className="">Log Out</span>

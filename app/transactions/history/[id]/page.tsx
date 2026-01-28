@@ -3,6 +3,7 @@ import ActionIcon from "@/components/Icons/Action";
 import Navigation from "@/components/Navigation";
 import ShowAlert from "@/components/ShowAlert";
 import { useBooking } from "@/context/Booking";
+import { useUser } from "@/context/UserContext";
 import { ShowAlertProps } from "@/models/ShowAlertProps";
 import StatusTransactionOrBookingProps from "@/models/StatusTransactionOrBooking";
 import Api from "@/utils/Api";
@@ -82,7 +83,7 @@ export default function DetailHistory() {
 
     const { id } = useParams()
 
-    const { user } = useBooking();
+    const { user } = useUser();
 
     useEffect(() => {
         const fetchTransactions = async () => {

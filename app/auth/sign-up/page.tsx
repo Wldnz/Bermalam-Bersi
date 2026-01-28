@@ -1,68 +1,94 @@
 "use client"
 
 import ActionIcon from "@/components/Icons/Action";
+import ShowAlert from "@/components/ShowAlert";
 import { useBooking } from "@/context/Booking";
+import { useUser } from "@/context/UserContext";
 import { AxiosErrorCustom } from "@/models/Models";
+import { ShowAlertProps } from "@/models/ShowAlertProps";
 import Api from "@/utils/Api";
+import GetRedirectURLParams from "@/utils/GetRedirectURL";
 import LoginOrRegisterWithGoogle from "@/utils/LoginOrRegisterWithGoogle";
+import SetShowAlertStateAction from "@/utils/SetShowAlert";
 import Image from "next/image";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useEffect, useState } from "react";
 
-interface RegisterData{
-    first_name:string
-    last_name:string
-    email:string
-    password:string
-    confirm_password:string
+interface RegisterData {
+    first_name: string
+    last_name: string
+    email: string
+    password: string
+    confirm_password: string
 }
 
 export default function AuthPage() {
 
     const router = useRouter()
-    
-    const { user, saveUser } = useBooking()
+    const searchParams = useSearchParams()
+    const redirectURL = GetRedirectURLParams(searchParams)
 
     const [showPassword, setShowPassword] = useState<boolean>(false)
     const [showConfirmPassword, setConfirmShowPassword] = useState<boolean>(false)
 
-    const [ registerData, setRegisterData ] = useState<RegisterData>({
-        first_name : "",
-        last_name : "",
-        email : "",
-        password : "",
-        confirm_password : "",
+    const [registerData, setRegisterData] = useState<RegisterData>({
+        first_name: "",
+        last_name: "",
+        email: "",
+        password: "",
+        confirm_password: "",
     })
 
-    if(user){
-        router.push("/")
-    }
+    const [passwordMessage, setPasswordMessage] = useState<string>("")
 
+    const [errorMessage, setErrorMessage] = useState<string>("")
 
-    const [ passwordMessage, setPasswordMessage ] = useState<string>("")
+    const [showAlertProps, setShowAlertProps] = useState<ShowAlertProps | undefined>()
 
-    const [ errorMessage, setErrorMessage ] = useState<string>("")
+    const { user, saveCredentials, GetCurrentCredentials } = useUser();
 
-    async function HandleSubmit(){
-        
-        if(registerData.confirm_password != registerData.password){
+    useEffect(() => {
+        if (!user) return
+        router.push(redirectURL)
+    }, [router, user, redirectURL])
+
+    async function HandleSubmit() {
+
+        if (registerData.confirm_password != registerData.password) {
             setPasswordMessage("Kata Sandi Dan Konfirmasi Kata Sandi Berbeda")
             return
         }
 
         try {
-            const { data } = await Api().post("/sign-up", registerData)
-            saveUser(data.data)
+            const { } = await Api().post("/sign-up", registerData)
+            SetShowAlertStateAction({
+                title: "Berhasil Mendaftarkan Akun!",
+                category: "success",
+                description: "Akun anda berhasil didaftarkan pada bermalam! & Kamu Akan Diarahkan Ke Halaman Utama",
+                actions: [],
+                closeAction: {
+                    label: "Tutup Pemberitahuan",
+                    handler: () => router.push(redirectURL)
+                },
+                iShowed: true
+            }, setShowAlertProps)
             setErrorMessage("")
-            router.push("/")
-        }catch(err){
+        } catch (err) {
             const error = err as AxiosErrorCustom
             setErrorMessage(error.response.data.message)
+            SetShowAlertStateAction({
+                title: error.status === 500 ? "Telah Terjadi Kesalahan" : "Peringatan",
+                category: error.status === 500 ? "error" : "information",
+                description: error.response.data.message,
+                actions: [],
+                iShowed: true
+            }, setShowAlertProps)
+            saveCredentials(null)
+        } finally {
+            GetCurrentCredentials()
         }
-
         setPasswordMessage("")
-
     }
 
     return <div className="w-full min-h-dvh p-5 py-8 flex gap-3 bg-white rounded-lg">
@@ -106,13 +132,13 @@ export default function AuthPage() {
         >
             <h2 className="font-bold text-(--status-refund) text-2xl">Selamat Datang Kembali</h2>
             <div className="w-[80%] p-1 grid grid-cols-2 items-center text-center text-xl font-bold bg-(--status-refund) rounded-lg">
-                <Link href={"/auth/sign-in"} className="text-background p-2.5 rounded-sm cursor-pointer">Masuk</Link>
+                <Link href={`/auth/sign-in?redirect_url=${redirectURL}`} className="text-background p-2.5 rounded-sm cursor-pointer">Masuk</Link>
                 <div className="bg-background  text-(--status-refund) p-2.5 rounded-sm cursor-pointer">Daftar</div>
             </div>
 
             <div className="flex flex-col gap-2.5">
                 <span>Silahkan, Mengisi Data Yang Dibutuhkan Ya!</span>
-                { errorMessage && <span className="text-center text-(--status-reject) text-lg">{errorMessage}</span> }
+                {errorMessage && <span className="text-center text-(--status-reject) text-lg">{errorMessage}</span>}
             </div>
 
             <div className="w-full flex flex-col gap-5 px-2">
@@ -133,7 +159,7 @@ export default function AuthPage() {
                                     return {
                                         ...prev,
                                         ...{
-                                            first_name : e.target.value
+                                            first_name: e.target.value
                                         }
                                     }
                                 })}
@@ -157,7 +183,7 @@ export default function AuthPage() {
                                     return {
                                         ...prev,
                                         ...{
-                                            last_name : e.target.value
+                                            last_name: e.target.value
                                         }
                                     }
                                 })}
@@ -176,14 +202,14 @@ export default function AuthPage() {
                         type="email"
                         minLength={8}
                         value={registerData.email}
-                                onChange={(e) => setRegisterData(prev => {
-                                    return {
-                                        ...prev,
-                                        ...{
-                                            email : e.target.value
-                                        }
-                                    }
-                                })}
+                        onChange={(e) => setRegisterData(prev => {
+                            return {
+                                ...prev,
+                                ...{
+                                    email: e.target.value
+                                }
+                            }
+                        })}
                         placeholder="wildan@example.com"
                         required
                     />
@@ -199,14 +225,14 @@ export default function AuthPage() {
                             type={showPassword ? "text" : "password"}
                             minLength={8}
                             value={registerData.password}
-                                onChange={(e) => setRegisterData(prev => {
-                                    return {
-                                        ...prev,
-                                        ...{
-                                            password : e.target.value
-                                        }
+                            onChange={(e) => setRegisterData(prev => {
+                                return {
+                                    ...prev,
+                                    ...{
+                                        password: e.target.value
                                     }
-                                })}
+                                }
+                            })}
                             placeholder=""
                             required
                         />
@@ -217,7 +243,7 @@ export default function AuthPage() {
                             <ActionIcon className="w-6 h-6 text-(--status-refund)" name={showPassword ? "eye_close" : "eye"} />
                         </button>
                     </div>
-                    { passwordMessage && <span className="text-(--status-reject)">Kata Sandi Harus Sama Dengan Konfirmasi Kata Sandi</span> }
+                    {passwordMessage && <span className="text-(--status-reject)">Kata Sandi Harus Sama Dengan Konfirmasi Kata Sandi</span>}
                 </div>
                 <div className="flex flex-col gap-2.5">
                     <div className="flex flex-col gap-0.5">
@@ -230,14 +256,14 @@ export default function AuthPage() {
                             type={showConfirmPassword ? "text" : "password"}
                             minLength={8}
                             value={registerData.confirm_password}
-                                onChange={(e) => setRegisterData(prev => {
-                                    return {
-                                        ...prev,
-                                        ...{
-                                            confirm_password : e.target.value
-                                        }
+                            onChange={(e) => setRegisterData(prev => {
+                                return {
+                                    ...prev,
+                                    ...{
+                                        confirm_password: e.target.value
                                     }
-                                })}
+                                }
+                            })}
                             placeholder=""
                             required
                         />
@@ -247,7 +273,7 @@ export default function AuthPage() {
                         >
                             <ActionIcon className="w-6 h-6 text-(--status-refund)" name={showConfirmPassword ? "eye_close" : "eye"} />
                         </button>
-                        { passwordMessage && <span className="text-(--status-reject)">Konfirmasi Kata Sandi Harus Sama Dengan Kata Sandi</span> }
+                        {passwordMessage && <span className="text-(--status-reject)">Konfirmasi Kata Sandi Harus Sama Dengan Kata Sandi</span>}
                     </div>
                 </div>
             </div>
@@ -267,5 +293,6 @@ export default function AuthPage() {
                 </button>
             </div>
         </form>
+        {showAlertProps && showAlertProps?.iShowed && <ShowAlert showedAlertProps={showAlertProps} setShowedAlertProps={setShowAlertProps} />}
     </div>
 }

@@ -4,13 +4,17 @@ import BookingIcons from "@/components/Icons/Booking"
 import HotelIcons from "@/components/Icons/Hotel"
 import TransactionIcons from "@/components/Icons/Transactions"
 import Navigation from "@/components/Navigation"
+import ShowAlert from "@/components/ShowAlert"
 import { useBooking } from "@/context/Booking"
+import { useUser } from "@/context/UserContext"
 import { AxiosErrorCustom } from "@/models/Models"
+import { ShowAlertProps } from "@/models/ShowAlertProps"
 import Api from "@/utils/Api"
 import convertNumberIntoIDR from "@/utils/ConvertNumberToIDR"
 import GetLabelDate from "@/utils/GetLabelDate"
 import GetTotalNights from "@/utils/GetTotalNight"
 import { getCurrentPriceLabel, totalRoomsLabel } from "@/utils/HotelPrice"
+import SetShowAlertStateAction from "@/utils/SetShowAlert"
 import Image from "next/image"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
@@ -79,7 +83,7 @@ export default function CreateTransactionPage({ }) {
 
     const bookingContext = useBooking()
 
-    const { user } = bookingContext
+    const { user } = useUser()
 
     const [showRoom, setShowRoom] = useState<boolean>(true)
 
@@ -89,10 +93,17 @@ export default function CreateTransactionPage({ }) {
 
     const [estimatePrice, setEstimatePrice] = useState<EstimatePrice>()
 
+    const [showAlertProps, setShowAlertProps] = useState<ShowAlertProps | undefined>()
+
+    const [currentTimeout, setCurrentTimeout] = useState<NodeJS.Timeout | null>(null)
 
     useEffect(() => {
-
         if (bookingContext.bookingData && bookingContext.orders) {
+            
+            if(currentTimeout){
+                clearTimeout(currentTimeout)
+                setCurrentTimeout(null)
+            }
 
             const totalNights = GetTotalNights(bookingContext.bookingData!.checkIn, bookingContext.bookingData!.checkOut)
 
@@ -141,7 +152,7 @@ export default function CreateTransactionPage({ }) {
             )
         }
 
-    }, [bookingContext.bookingData, bookingContext.orders, user])
+    }, [bookingContext.bookingData, bookingContext.orders, user, currentTimeout])
 
     useEffect(() => {
         const fetchVouchers = async () => {
@@ -182,22 +193,42 @@ export default function CreateTransactionPage({ }) {
 
     }, [transactionData])
 
-
     if (!bookingContext.bookingData || !bookingContext.orders) {
+        if (!currentTimeout) {
+            setCurrentTimeout(setTimeout(() => {
+                router.push("/")
+            }, 1000))
+        }
         return <div>Loading Pemesanan....</div>
     }
 
     const checkInDate = new Date(bookingContext.bookingData!.checkIn)
     const checkOutDate = new Date(bookingContext.bookingData!.checkOut)
 
-    const HandleSubmitTransaction = async (dataTransaction : RequestTransaction) => {
-        try{
+    const HandleSubmitTransaction = async (dataTransaction: RequestTransaction) => {
+        try {
             const { data } = await Api().post("/create-booking", dataTransaction)
-            router.push(data.data)
-        }catch(err){
-            // alert...
+            bookingContext.saveBooking(null)
+            bookingContext.saveOrders([])
+            SetShowAlertStateAction({
+                title: "Berhasil Membuat Transaksi",
+                description: "Transaksi Berhasil Dibuat!, Kamu Akan Langsung Diarahkan Ke Dalama Halaman Pembayaran!",
+                category: "success",
+                closeAction: {
+                    label: "Tutup & Arahkan Saya",
+                    handler: () => router.push(data.data)
+                },
+                iShowed: true,
+            }, setShowAlertProps)
+        } catch (err) {
             const error = err as AxiosErrorCustom
-            console.log(error.response.data.message)
+            SetShowAlertStateAction({
+                title: error.status === 500 ? "Telah Terjadi Kesalahan" : "Peringatan",
+                category: error.status === 500 ? "error" : "information",
+                description: error.response.data.message,
+                actions: [],
+                iShowed: true
+            }, setShowAlertProps)
         }
     }
 
@@ -206,6 +237,10 @@ export default function CreateTransactionPage({ }) {
     return (
         <div className="w-full min-h-dvh flex flex-col gap-10 font-inter">
             <Navigation showNavigation={false} />
+            {showAlertProps && showAlertProps.iShowed && <ShowAlert
+                showedAlertProps={showAlertProps}
+                setShowedAlertProps={setShowAlertProps}
+            />}
 
             <form className="flex gap-5 justify-between"
                 onSubmit={(e) => {
@@ -215,7 +250,7 @@ export default function CreateTransactionPage({ }) {
                         full_name: transactionData!.first_name + " " + transactionData!.last_name,
                         phone_country_code: transactionData?.phone_country_code.toString() ?? "62",
                         phone: transactionData!.phone,
-                        hasWhastApp : false,
+                        hasWhastApp: false,
                     }
                     const rooms = transactionData!.rooms.map((room) => {
                         return {
@@ -229,7 +264,7 @@ export default function CreateTransactionPage({ }) {
                                                 full_name: temp_guest_data.full_name,
                                                 phone_country_code: temp_guest_data.phone_country_code,
                                                 phone: temp_guest_data.phone,
-                                                hasWhastApp : temp_guest_data.hasWhastApp
+                                                hasWhastApp: temp_guest_data.hasWhastApp
                                             }
                                         }
                                     }
@@ -237,7 +272,7 @@ export default function CreateTransactionPage({ }) {
                                         full_name: guest.full_name,
                                         phone_country_code: guest.phone_country_code,
                                         phone: guest.phone,
-                                        hasWhastApp : guest.hasWhastApp,
+                                        hasWhastApp: guest.hasWhastApp,
                                     }
                                     return guest
                                 })
@@ -374,13 +409,13 @@ export default function CreateTransactionPage({ }) {
                         </div>
                         <div className="flex gap-3 text-background">
                             <Link
-                                href={"/auth/sign-up?redirect_url=/transaction/create"}
+                                href={"/auth/sign-up?redirect_url=/transactions/create"}
                                 className="cursor-pointer"
                                 type="button"
                             >Daftar</Link>
                             <span> | </span>
                             <Link
-                                href={"/auth/sign-in?redirect_url=/transaction/create"}
+                                href={"/auth/sign-in?redirect_url=/transactions/create"}
                                 className="cursor-pointer"
                                 type="button"
                             >Login</Link>

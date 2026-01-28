@@ -1,9 +1,13 @@
 "use client"
 import ActionIcon from "@/components/Icons/Action";
-import { useBooking } from "@/context/Booking";
+import ShowAlert from "@/components/ShowAlert";
+import { useUser } from "@/context/UserContext";
 import { AxiosErrorCustom } from "@/models/Models";
+import { ShowAlertProps } from "@/models/ShowAlertProps";
 import Api from "@/utils/Api";
+import GetRedirectURLParams from "@/utils/GetRedirectURL";
 import LoginOrRegisterWithGoogle from "@/utils/LoginOrRegisterWithGoogle";
+import SetShowAlertStateAction from "@/utils/SetShowAlert";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -22,48 +26,56 @@ export default function AuthPage() {
     const router = useRouter()
 
     const searchParams = useSearchParams()
-    const redirectURL = searchParams.get("redirect_url") ?? "/";
+    const redirectURL = GetRedirectURLParams(searchParams)
 
     const [showPassword, setShowPassword] = useState<boolean>(false)
 
-    const [ credential, setCredential ] = useState<LoginData>( {
-        email : "",
-        password : "",
+    const [credential, setCredential] = useState<LoginData>({
+        email: "",
+        password: "",
         is_remember: false
     })
-    
-    const [ errorMessage, setErrorMessage ] = useState<string>("")
-    const [ successMessage, setSuccessMessage ] = useState<string>("")
 
-    const { user, saveUser } = useBooking()
-
-    const fetchingData = async() => {
-        try{
-            const { data, status } = await Api().post("/sign-in", credential)
-
-            if (status === 200) {
-                setErrorMessage("")
-                setSuccessMessage("Login Anda Berhasil! \nAnda akan diarahkan ke ke halaman utama dalam 5 detik")
-                saveUser(data.data)
-                setTimeout(() => {
-                    router.push("/")
-                }, 5000)
-            }
-
-        }catch(err){
-            const error = err as AxiosErrorCustom
-            if(error.status === 404){
-                setErrorMessage(error.response?.data.message.includes("or")? "Email Atau Kata Sandi Salah!" : error.response?.data.message)
-            }
-        }
-    }
-
+    const { user, GetCurrentCredentials, saveCredentials } = useUser()
+    const [errorMessage, setErrorMessage] = useState<string>("")
+    const [successMessage, setSuccessMessage] = useState<string>("")
+    const [showAlertProps, setShowAlertProps] = useState<ShowAlertProps | undefined>()
 
     useEffect(() => {
-        if(user){
-            router.push(redirectURL ?? "/")
-        }
+        if (!user) return
+        router.push(redirectURL)
     }, [router, user, redirectURL])
+
+    const fetchingData = async () => {
+        try {
+            const { } = await Api().post("/sign-in", credential)
+            SetShowAlertStateAction({
+                title: "Berhasil Login!",
+                category: "success",
+                description: `Anda Berhasil Login.. Anda Akan Diarahkan Kembali Ke Halaman:  ${redirectURL == "/" ? "Utama" : "Transaksi"}`,
+                actions: [],
+                closeAction: {
+                    label: "Tutup Pemberitahuan",
+                    handler: () => router.push(redirectURL)
+                },
+                iShowed: true
+            }, setShowAlertProps)
+        } catch (err) {
+            const error = err as AxiosErrorCustom
+            const message = error.response?.data.message.includes("or") ? "Email Atau Kata Sandi Salah!" : error.response?.data.message
+            SetShowAlertStateAction({
+                title: error.status === 500 ? "Telah Terjadi Kesalahan" : "Peringatan",
+                category: error.status === 500 ? "error" : "information",
+                description: message,
+                actions: [],
+                iShowed: true
+            }, setShowAlertProps)
+            saveCredentials(null)
+            setErrorMessage(message)
+        } finally {
+            GetCurrentCredentials()
+        }
+    }
 
     return <div className="w-full min-h-dvh p-5 py-8 flex gap-3 bg-white rounded-lg">
         <div className="flex flex-col justify-between gap-2.5 p-2">
@@ -107,12 +119,12 @@ export default function AuthPage() {
             <h2 className="font-bold text-(--status-refund) text-2xl">Selamat Datang Kembali</h2>
             <div className="w-[80%] p-1 grid grid-cols-2 items-center text-center text-xl font-bold bg-(--status-refund) rounded-lg">
                 <div className="bg-background  text-(--status-refund) p-2.5 rounded-sm cursor-pointer">Masuk</div>
-                <Link href={"/auth/sign-up"} className="text-background p-2.5 rounded-sm cursor-pointer">Daftar</Link>
+                <Link href={`/auth/sign-up?redirect_url=${redirectURL}`} className="text-background p-2.5 rounded-sm cursor-pointer">Daftar</Link>
             </div>
             <div className="flex flex-col gap-1">
                 <span>Silahkan, Masukkan Dengan Akun Yang Sudah Terdaftar Ya!</span>
-                { errorMessage && <span className="text-center text-(--status-reject)">{errorMessage}</span> }
-                { successMessage && <span className="text-center text-(--status-done)">{successMessage}</span> }
+                {errorMessage && <span className="text-center text-(--status-reject)">{errorMessage}</span>}
+                {successMessage && <span className="text-center text-(--status-done)">{successMessage}</span>}
             </div>
             <div className="w-full flex flex-col gap-2.5 px-2">
                 <div className="flex flex-col gap-1">
@@ -126,7 +138,7 @@ export default function AuthPage() {
                         type="email"
                         minLength={3}
                         value={credential?.email}
-                        onChange={(e) => setCredential(prev => { return {...prev, ... { email : e.target.value  } } })}
+                        onChange={(e) => setCredential(prev => { return { ...prev, ... { email: e.target.value } } })}
                         placeholder="wildan@example.com"
                         required
                     />
@@ -143,7 +155,7 @@ export default function AuthPage() {
                         type={showPassword ? "text" : "password"}
                         minLength={8}
                         value={credential.password}
-                        onChange={(e) => setCredential(prev => { return {...prev, ... { password : e.target.value } }} )}
+                        onChange={(e) => setCredential(prev => { return { ...prev, ... { password: e.target.value } } })}
                         placeholder=""
                         required
                     />
@@ -160,9 +172,9 @@ export default function AuthPage() {
                     <input
                         className="w-4.5 h-4.5 border-2 border-(--status-refund) rounded-lg cursor-pointer"
                         type="checkbox" id="remember_me"
-                        value={credential.is_remember? 1 : 0}
-                        onChange={() => setCredential(prev => { return { ...prev, ...{ is_remember : !prev.is_remember  } } } )}
-                        />
+                        value={credential.is_remember ? 1 : 0}
+                        onChange={() => setCredential(prev => { return { ...prev, ...{ is_remember: !prev.is_remember } } })}
+                    />
                     <label className="cursor-pointer" htmlFor="remember_me">Ingat Saya Selama 7 Hari?</label>
                 </div>
                 <Link
@@ -175,11 +187,12 @@ export default function AuthPage() {
                 >Masuk</button>
                 <button className="p-2 flex items-center justify-center font-bold bg-(--status-refund) rounded-lg cursor-pointer"
                     type="button"
-                    onClick={() => LoginOrRegisterWithGoogle(router, setErrorMessage)}    
+                    onClick={() => LoginOrRegisterWithGoogle(router, setErrorMessage)}
                 >
                     <ActionIcon className="w-8 h-8" name="google" />
                 </button>
             </div>
         </form>
+        {showAlertProps && showAlertProps?.iShowed && <ShowAlert showedAlertProps={showAlertProps} setShowedAlertProps={setShowAlertProps} />}
     </div>
 }

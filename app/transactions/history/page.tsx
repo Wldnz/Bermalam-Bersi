@@ -6,7 +6,6 @@ import Api from "@/utils/Api";
 import convertNumberIntoIDR from "@/utils/ConvertNumberToIDR";
 import GetLabelDate from "@/utils/GetLabelDate";
 import { GetStatusAttributeTransaction } from "@/utils/GetStatusAtrribute";
-import { Artifika } from "next/font/google";
 import Image from "next/image";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";

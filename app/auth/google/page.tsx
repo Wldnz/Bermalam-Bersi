@@ -1,12 +1,15 @@
 "use client"
 
 import Api from "@/utils/Api"
-import { useRouter, usePathname } from "next/navigation"
+import GetRedirectURLParams from "@/utils/GetRedirectURL"
+import { useRouter, useSearchParams } from "next/navigation"
 import { useEffect, useState } from "react"
 
 export default function GoogleAuthCallBack() {
 
     const router = useRouter()
+    const searchParams = useSearchParams()
+    const redirectURL = GetRedirectURLParams(searchParams)
     const [currentQueryParams, setCurrentQueryParams] = useState<string>("")
 
     useEffect(() => {
@@ -15,7 +18,7 @@ export default function GoogleAuthCallBack() {
              if (typeof window !== 'undefined') {
                 setCurrentQueryParams(location.href.split(location.origin)[1])
                 await Api().get(`${location.href.split(location.origin)[1]}`)
-                router.push("/")
+                router.push(redirectURL)
             }
            }catch{
                 router.push("/auth/sign-in")

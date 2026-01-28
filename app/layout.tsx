@@ -3,6 +3,7 @@ import { Inter } from "next/font/google";
 import Footer from "@/components/Footer";
 import "./globals.css";
 import { BookingProvider } from "@/context/Booking";
+import { UserProvider } from "@/context/UserContext";
 
 const interFont = Inter({
   variable: "--font-inter",
@@ -24,11 +25,13 @@ export default function RootLayout({
       <body
         className={`${interFont.variable} antialiased`}
       >
-        <BookingProvider>
-          {children}
-        </BookingProvider>
+        <UserProvider>
+          <BookingProvider>
+            {children}
+          </BookingProvider>
+        </UserProvider>
         <div className="w-full h-30"></div>
-      <Footer/>
+        <Footer />
       </body>
     </html>
   );
