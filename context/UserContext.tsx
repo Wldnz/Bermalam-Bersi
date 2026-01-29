@@ -1,12 +1,11 @@
 "use client"
-import { AxiosErrorCustom } from "@/models/Models"
 import Api from "@/utils/Api"
 import { createContext, Dispatch, ReactNode, SetStateAction, useContext, useEffect, useState } from "react"
 
 interface UserContextType {
     user: CurrentCredential | null
     Logout: () => void
-    GetCurrentCredentials: () => void
+    GetCurrentCredentials: () => Promise<CurrentCredential | null>
     saveCredentials : ( data : CurrentCredential  | null) => void
 }
 
@@ -38,10 +37,10 @@ export function UserProvider({ children }: { children: ReactNode }) {
     }
 
     const GetCurrentCredentials = () => {
-        getCurrentCredentials(setUser)
+        return getCurrentCredentials(setUser)
     }
 
-    useEffect(() => GetCurrentCredentials(), [])
+    useEffect(() => { getCurrentCredentials(setUser) }, [])
 
     return <UserContext.Provider value={ { user, saveCredentials, GetCurrentCredentials, Logout } }>
         {children}
@@ -57,12 +56,14 @@ export function useUser() {
     return context
 }
 
-const getCurrentCredentials = async(setUser : Dispatch<SetStateAction<CurrentCredential | null>>)  => {
+const getCurrentCredentials = async(setUser : Dispatch<SetStateAction<CurrentCredential | null>>) : Promise<CurrentCredential | null>  => {
     try{
         const {  data } = await Api().get("/check-current-session");
         setUser(data.data)
+        return data.data
     }catch{
         setUser(null)
+        return null
     }
 }
 
@@ -75,15 +76,15 @@ const logOutHandler = async(setUser : Dispatch<SetStateAction<CurrentCredential 
     }
 }
 
-const loginHandler = async(
-    dataBody : object,
-    setUser : Dispatch<SetStateAction<CurrentCredential | null>>
-) => {
-    try{
-        const { data } = await Api().post("/sign-in", dataBody)
-        setUser(data.data)
-    }catch(err){
-        const error = err as AxiosErrorCustom
-        setUser(null)
-    }
-}
+// const loginHandler = async(
+//     dataBody : object,
+//     setUser : Dispatch<SetStateAction<CurrentCredential | null>>
+// ) => {
+//     try{
+//         const { data } = await Api().post("/sign-in", dataBody)
+//         setUser(data.data)
+//     }catch(err){
+//         const error = err as AxiosErrorCustom
+//         setUser(null)
+//     }
+// }

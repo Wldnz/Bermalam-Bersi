@@ -4,6 +4,7 @@ import Footer from "@/components/Footer";
 import "./globals.css";
 import { BookingProvider } from "@/context/Booking";
 import { UserProvider } from "@/context/UserContext";
+import { MiddlewareProvider } from "@/context/Middleware";
 
 const interFont = Inter({
   variable: "--font-inter",
@@ -26,9 +27,11 @@ export default function RootLayout({
         className={`${interFont.variable} antialiased`}
       >
         <UserProvider>
-          <BookingProvider>
-            {children}
-          </BookingProvider>
+          <MiddlewareProvider>
+            <BookingProvider>
+              {children}
+            </BookingProvider>
+          </MiddlewareProvider>
         </UserProvider>
         <div className="w-full h-30"></div>
         <Footer />
