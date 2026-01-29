@@ -1,6 +1,7 @@
 package guest_discount
 
 import (
+	"fmt"
 	"net/http"
 	"time"
 
@@ -9,15 +10,15 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func GetUsedVouchers(c *gin.Context) {
+func GetActiveOrInactiveVouchers(c *gin.Context) {
 
-	category := c.DefaultQuery("category", "discount")
+	status := c.Query("status")
 
-	credentials := controller.CheckCredentialsAccount(c)
+	credential := controller.CheckCredentialsAccount(c)
 
-	if !credentials.IsAuthorized {
+	if !credential.IsAuthorized {
 		c.JSON(http.StatusUnauthorized, gin.H{
-			"message":     "Sorry, we cannot process...",
+			"message":     "Sorry, We cannot process...",
 			"status_code": http.StatusUnauthorized,
 		})
 		return
@@ -38,19 +39,24 @@ func GetUsedVouchers(c *gin.Context) {
 
 	currentTime := time.Now()
 	currentTimeMili := currentTime.UnixMilli()
-	query := `SELECT id, name, description, category, poin_exchange FROM vouchers
-				WHERE stock > 0 AND expired_at > ? AND category=? AND id IN (
-					SELECT uv.id FROM transaction_vouchers ts
-						LEFT JOIN user_vouchers uv ON uv.id = ts.id_user_voucher
-						LEFT JOIN vouchers v ON v.id = uv.id_voucher
-						WHERE uv.id_user = ?
-				)`
 
-	rows, err := db.Query(query, currentTimeMili, category, credentials.User.ID)
+	additionalParam := ""
+
+	if status != "" {
+		additionalParam += fmt.Sprintf(" AND uv.status='%s'", status)
+	}
+
+	query := fmt.Sprintf(`SELECT v.id, v.name, v.description, v.category, v.poin_exchange, v.uv.status FROM vouchers v
+				WHERE stock > 0 AND expired_at > ? AND (category='discount' OR category='cashback')
+				JOIN user_vouchers uv ON uv.id = v.id 
+				WHERE uv.id_user=? AND %s
+				`, additionalParam)
+
+	rows, err := db.Query(query, currentTimeMili, credential.User.ID)
 
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
-			"message":     "There's Something Error When Getting Available Vouchers",
+			"message":     "There's Something Error When Getting Active Or Active Vouchers",
 			"error":       err.Error(),
 			"status_code": http.StatusInternalServerError,
 		})
@@ -76,14 +82,14 @@ func GetUsedVouchers(c *gin.Context) {
 
 	if len(vouchers) == 0 {
 		c.JSON(http.StatusNotFound, gin.H{
-			"message":     "Sorry.. We Cannot Found Any Available Vouchers...",
+			"message":     "Sorry.. We Cannot Found Any Active Or Active Vouchers...",
 			"status_code": http.StatusNotFound,
 		})
 		return
 	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"message":     "Succesfully Getting Available Vouchers!",
+		"message":     "Succesfully Getting Active Or Active Vouchers!",
 		"data":        vouchers,
 		"status_code": http.StatusOK,
 	})

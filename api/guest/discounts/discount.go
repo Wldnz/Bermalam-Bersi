@@ -1,6 +1,7 @@
 package guest_discount
 
 import (
+	"fmt"
 	"net/http"
 	"time"
 
@@ -18,7 +19,9 @@ type ResultDiscount struct {
 
 func GetDiscounts(c *gin.Context) {
 
-	category := c.DefaultQuery("category", "discount")
+	category := c.Query("category")
+
+	// credential := controller.CheckCredentialsAccount(c)
 
 	db, err := config.ConnectToDatabase()
 
@@ -35,10 +38,24 @@ func GetDiscounts(c *gin.Context) {
 
 	currentTime := time.Now()
 	currentTimeMili := currentTime.UnixMilli()
-	query := `SELECT id, name, description, category, poin_exchange FROM vouchers
-				WHERE stock > 0 AND expired_at > ? AND category=?`
 
-	rows, err := db.Query(query, currentTimeMili, category)
+	additionalParam := ""
+
+	if category != "" {
+		additionalParam += fmt.Sprintf("AND category='%s'", category)
+	} else {
+		additionalParam += "AND (category='discount' OR category='cashback')"
+	}
+
+	// if credential.IsAuthorized {
+	// 	additionalParam += fmt.Sprintf(" AND uv.id_user=%d", credential.User.ID)
+	// }
+
+	query := fmt.Sprintf(`SELECT id, name, description, category, poin_exchange FROM vouchers
+				WHERE stock > 0 AND expired_at > ?  %s
+				`, additionalParam)
+
+	rows, err := db.Query(query, currentTimeMili)
 
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{

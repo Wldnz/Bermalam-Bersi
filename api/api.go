@@ -12,6 +12,7 @@ import (
 	guest_faqs "bersi.bermalam.id/api/guest/faqs"
 	guest "bersi.bermalam.id/api/guest/hotels"
 	hotel_room "bersi.bermalam.id/api/guest/hotels/rooms"
+	guest_profile "bersi.bermalam.id/api/guest/profiles"
 	guest_transactions "bersi.bermalam.id/api/guest/transactions"
 	"github.com/gin-gonic/gin"
 )
@@ -91,7 +92,12 @@ func InitiliazeApi(g *gin.Engine) {
 
 	g.GET("/vouchers", guest_discount.GetDiscounts)
 	g.GET("/vouchers/users", guest_discount.GetVoucherUser)
-	g.GET("/vouchers/used", guest_discount.GetUsedVouchers)
+	g.GET("/vouchers/used", guest_discount.GetActiveOrInactiveVouchers)
+	g.POST("/vouchers/reedem/:id", guest_discount.RedeemVoucher)
+
+	g.GET("/profile", guest_profile.GetProfiles)
+	g.GET("/profile/summary-transactions", guest_profile.SummaryTransactionProfile)
+	g.PUT("/profile", guest_profile.UpdateAccount)
 
 	g.POST("/check-price", guest_transactions.CheckPrice)
 
