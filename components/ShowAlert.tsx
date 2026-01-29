@@ -1,16 +1,17 @@
 "use client"
-import { Dispatch, SetStateAction, useState } from "react"
+import React, { Dispatch, SetStateAction, useState } from "react"
 import ActionIcon from "./Icons/Action"
 import { ShowAlertProps } from "@/models/ShowAlertProps"
 import SetShowAlertStateAction from "@/utils/SetShowAlert"
 
 
-export default function ShowAlert({ showedAlertProps, setShowedAlertProps } : {
-    showedAlertProps : ShowAlertProps,
-    setShowedAlertProps : Dispatch<SetStateAction<ShowAlertProps | undefined>>
+export default function ShowAlert({ showedAlertProps, setShowedAlertProps, children }: {
+    showedAlertProps: ShowAlertProps,
+    setShowedAlertProps: Dispatch<SetStateAction<ShowAlertProps | undefined>>,
+    children? : React.ReactNode
 }) {
 
-    const { title, category, description, actions, closeAction } = showedAlertProps
+    const { title, category, description, actions, closeAction, AdditionalInformation } = showedAlertProps
 
     const [showAlert, setShowAlert] = useState<boolean>(true)
 
@@ -23,6 +24,12 @@ export default function ShowAlert({ showedAlertProps, setShowedAlertProps } : {
                 <span className="text-sm">{description}</span>
             </div>
 
+            { AdditionalInformation && AdditionalInformation?.map((information, index) => {
+                return <AdditionalInformationCard isSucces={information.isSuccess} label={information.label} key={`key-additional-information-${information.label}-${index}`} />
+            } ) }
+
+            { children }
+
             <div className="w-full flex flex-col gap-1.5">
                 {actions && actions?.map((action, index) => {
                     return <TombolHitam label={action.label}
@@ -33,7 +40,7 @@ export default function ShowAlert({ showedAlertProps, setShowedAlertProps } : {
                     />
                 })}
             </div>
-            <TombolTutup label={closeAction?.label ?? "Tutup Pemberitahuan" } handler={closeAction?.handler ?? function(){} } setShowAlert={setShowAlert} setShowedAlertProps={setShowedAlertProps!} />
+            <TombolTutup label={closeAction?.label ?? "Tutup Pemberitahuan"} handler={closeAction?.handler ?? function () { }} setShowAlert={setShowAlert} setShowedAlertProps={setShowedAlertProps!} />
         </div>
     </div> : <></>
 }
@@ -61,7 +68,21 @@ const GettingAlertIcon = ({ category }: { category: string }) => {
     const Icon = alertIcons.find(icon => icon.name === category)
 
     return <ActionIcon className={`w-14 h-14 ${Icon?.class ?? "text-(--status-done)"}`} name={Icon?.iconName ?? "information_solid"} />
+}
 
+const AdditionalInformationCard = ({
+    label, isSucces
+} : {
+    label : string,
+    isSucces : boolean
+}) => {
+    return <div className={`w-full flex items-center justify-between ${isSucces ? "text-(--status-done)" : "text-(--status-reject)"}`}>
+        <span className="font-bold">{ label }</span>
+        <div className="flex items-center gap-1.5">
+            <span className="font-medium">{ isSucces? "Berhasil" : "Tidak Berhasil" }</span>
+            <ActionIcon className="w-5 h-5" name={isSucces ? "success" : "close_outline"} />
+        </div>
+    </div>
 }
 
 const TombolHitam = ({
@@ -76,13 +97,16 @@ const TombolHitam = ({
     setShowedAlertProps: Dispatch<SetStateAction<ShowAlertProps | undefined>>,
 }) => {
     return <button className="w-full p-3 font-bold text-background bg-foreground rounded-lg cursor-pointer"
+        type="button"
         onClick={() => {
             setShowAlert(false);
             SetShowAlertStateAction({
-                title : "",
-                description : "",
-                category : "",
-                iShowed : false
+                title: "",
+                description: "",
+                category: "",
+                AdditionalInformation : [],
+                actions : [],
+                iShowed: false
             }, setShowedAlertProps)
             handler();
         }}
@@ -101,13 +125,16 @@ const TombolTutup = ({
     setShowedAlertProps: Dispatch<SetStateAction<ShowAlertProps | undefined>>,
 }) => {
     return <button className="w-full p-3 font-bold text-foreground) bg-background rounded-lg cursor-pointer"
+        type="button"
         onClick={() => {
             setShowAlert(false);
-             SetShowAlertStateAction({
-                title : "",
-                description : "",
-                category : "",
-                iShowed : false
+            SetShowAlertStateAction({
+                title: "",
+                description: "",
+                category: "",
+                AdditionalInformation : [],
+                actions : [],
+                iShowed: false
             }, setShowedAlertProps)
             handler()
         }}
