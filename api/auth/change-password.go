@@ -12,8 +12,8 @@ import (
 )
 
 type RequestBodyChangePassword struct {
-	Password    string `json:"password" binding:"required, password"`
-	NewPassword string `json:"new_password" binding:"required, password"`
+	Password    string `json:"password" binding:"required"`
+	NewPassword string `json:"new_password" binding:"required"`
 }
 
 func ChangePasswordAccount(c *gin.Context) {
@@ -52,25 +52,14 @@ func ChangePasswordAccount(c *gin.Context) {
 
 	defer db.Close()
 
-	hashedPassword, err := utils.CreateHashPassword(data.Password)
+	query := `SELECT password FROM users WHERE id=?`
 
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"message":     "There's Something Error When Hashed Password",
-			"error":       err.Error(),
-			"status_code": http.StatusInternalServerError,
-		})
-		return
-	}
+	var hashedPassword string
 
-	query := `SELECT id FROM users WHERE password =? AND id=?`
-
-	var idUser int
-
-	if err = db.QueryRow(query, hashedPassword, credential.User.ID).Scan(idUser); err != nil {
+	if err = db.QueryRow(query, credential.User.ID).Scan(&hashedPassword); err != nil {
 		if err == sql.ErrNoRows {
 			c.JSON(http.StatusNotFound, gin.H{
-				"message":     "Password Lama Tidak Sama!",
+				"message":     "Cannot Found Account!",
 				"error":       err.Error(),
 				"status_code": http.StatusNotFound,
 			})
@@ -81,6 +70,16 @@ func ChangePasswordAccount(c *gin.Context) {
 				"status_code": http.StatusInternalServerError,
 			})
 		}
+		return
+	}
+
+	isOldPasswordIsCorrect := utils.CompareHashPassword(hashedPassword, data.Password)
+
+	if !isOldPasswordIsCorrect {
+		c.JSON(http.StatusNotFound, gin.H{
+			"message":     "Sorry, your password is not valid!",
+			"status_code": http.StatusNotFound,
+		})
 		return
 	}
 

@@ -26,7 +26,6 @@ type RequestUpdateAccountData struct {
 	LastName         string `form:"last_name"`
 	PhoneCountryCode string `form:"phone_country_code"`
 	Phone            string `form:"phone"`
-	Role             string `form:"role"`
 
 	IsLocationUpdate string `form:"is_location_update" binding:"required"`
 	Address          string `form:"address"`
@@ -114,7 +113,7 @@ func UpdateAccount(c *gin.Context) {
 	if strings.ToLower(RequestData.IsGeneralInformationUpdate) == "true" {
 
 		stmtGeneral, err := db.Prepare(`UPDATE users
-			SET first_name=?, last_name=?, phone_country_code=?, phone=?, role=?, updated_at=?
+			SET first_name=?, last_name=?, phone_country_code=?, phone=?, updated_at=?
 				WHERE id=?
 		`)
 
@@ -135,7 +134,6 @@ func UpdateAccount(c *gin.Context) {
 			RequestData.LastName,
 			RequestData.PhoneCountryCode,
 			RequestData.Phone,
-			RequestData.Role,
 			currentTimeMili,
 			credential.User.ID,
 		)
@@ -343,14 +341,14 @@ func UpdateAccount(c *gin.Context) {
 
 		isHasLocation := true
 
-		query := `SELECT id FROM user_address WHERE id_user=?`
+		query := `SELECT id FROM user_address WHERE id=?`
 
 		if err = db.QueryRow(query, credential.User.ID).Scan(); err != nil {
 			if err == sql.ErrNoRows {
 				isHasLocation = false
 			} else {
 				c.JSON(http.StatusInternalServerError, gin.H{
-					"message":     "There's Something Erro When Getting user locations",
+					"message":     "There's Something Error When Getting user locations",
 					"error":       err.Error(),
 					"status_code": http.StatusInternalServerError,
 				})
@@ -445,7 +443,7 @@ func UpdateAccount(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"message":        "Succesfully Upadting Account!",
+		"message":        "Succesfully Updating Account!",
 		"status_code":    http.StatusOK,
 		"status_updated": statusUpdated,
 	})

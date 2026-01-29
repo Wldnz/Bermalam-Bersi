@@ -55,6 +55,9 @@ func InitiliazeApi(g *gin.Engine) {
 	g.GET("/check-current-session", auth.CheckCurrentSession)
 	g.POST("/send-back-activate", auth.SendBackActiavateAccunt)
 
+	// change password (30 januari 2026 jam 1:03 AM wkwkwk)
+	g.PUT("/change-password", auth.ChangePasswordAccount)
+
 	// administrasi api
 
 	// tambahkan middleware willlllllllllllllllllllllllll 1 januari 2026 damn, 9 hari lagi deadline :D
