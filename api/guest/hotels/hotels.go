@@ -110,7 +110,7 @@ func FindHotels(c *gin.Context) {
 	%s AS default_price,
 	%s AS minimun_price,
 	COUNT(DISTINCT hr.id) AS total_rooms,
-	hi.url AS image_url
+	COALESCE(hi.url, 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTyNfRFSIbyb40oYPjza5OgYytSKB5U0019ZQ&s') AS image_url
  FROM hotels h  
 		INNER JOIN hotel_type_rooms htr ON htr.id_hotel = h.id
 		INNER JOIN hotel_location hl ON hl.id_hotel = h.id

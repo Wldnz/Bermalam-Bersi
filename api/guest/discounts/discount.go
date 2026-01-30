@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"bersi.bermalam.id/config"
+	"bersi.bermalam.id/controller"
 	"github.com/gin-gonic/gin"
 )
 
@@ -21,7 +22,7 @@ func GetDiscounts(c *gin.Context) {
 
 	category := c.Query("category")
 
-	// credential := controller.CheckCredentialsAccount(c)
+	credential := controller.CheckCredentialsAccount(c)
 
 	db, err := config.ConnectToDatabase()
 
@@ -47,9 +48,17 @@ func GetDiscounts(c *gin.Context) {
 		additionalParam += "AND (category='discount' OR category='cashback')"
 	}
 
-	// if credential.IsAuthorized {
-	// 	additionalParam += fmt.Sprintf(" AND uv.id_user=%d", credential.User.ID)
-	// }
+	if credential.IsAuthorized {
+		additionalParam += fmt.Sprintf(` AND id NOT IN (
+			SELECT id_voucher FROM user_vouchers WHERE id_user = %d
+			GROUP BY id
+		)`, credential.User.ID)
+
+		// additionalParam += fmt.Sprintf(` AND max_excahange > (
+		// 	SELECT COUNT(id) FROM user_vouchers WHERE id_user = %d
+		// 	GROUP BY id
+		// )`, credential.User.ID)
+	}
 
 	query := fmt.Sprintf(`SELECT id, name, description, category, poin_exchange FROM vouchers
 				WHERE stock > 0 AND expired_at > ?  %s
