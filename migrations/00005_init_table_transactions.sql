@@ -71,6 +71,7 @@ CREATE TABLE `transaction_vouchers` (
   `id` int PRIMARY KEY AUTO_INCREMENT,
   `id_user_voucher` int,
   `id_transaction` int,
+  `total_price_reduction` decimal(10,2) NOT NULL,
   `created_at` bigint NOT NULL,
   `updated_at` bigint NOT NULL,
   `created_by` int,

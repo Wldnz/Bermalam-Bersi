@@ -49,7 +49,7 @@ func GetFAQS(c *gin.Context) {
 
 	faqs := []ResultFAQS{}
 
-	defer rows.Next()
+	defer rows.Close()
 
 	for rows.Next() {
 		var faq ResultFAQS
@@ -68,7 +68,6 @@ func GetFAQS(c *gin.Context) {
 	if len(faqs) == 0 {
 		c.JSON(http.StatusNotFound, gin.H{
 			"message":     "Sorry.. We Cannot Found Any FAQS",
-			"error":       err.Error(),
 			"status_code": http.StatusNotFound,
 		})
 		return
