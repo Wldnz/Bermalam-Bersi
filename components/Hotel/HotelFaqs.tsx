@@ -7,7 +7,7 @@ export default function HotelFaqs({
     faqs : Faqs[]
 }) {
 
-    return faqs.length && <div className="flex flex-col gap-4" id="faqs">
+    return faqs?.length && <div className="flex flex-col gap-4" id="faqs">
             <h2 className="font-bold text-xl">Pertanyaan - Pertanyaan Yang Sering Diajukan</h2>
             <div className="flex flex-col gap-4">
                 {faqs.map((faq, index) => {

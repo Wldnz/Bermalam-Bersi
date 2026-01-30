@@ -222,7 +222,7 @@ export default function ProfilePage() {
             <div className="w-full flex justify-between items-center gap-2.5 border-b-2 border-background py-2">
                 <h2 className="text-xl font-bold">Informasi Pribadi</h2>
                 {profile && <button className="w-max p-2 flex items-center gap-2.5 text-background bg-(--status-refund) rounded-lg cursor-pointer"
-                    type="button"
+                    type={isLoading? "button" : "submit"}
                 >
                     <span className="text-lg font-bold">{isLoading ? "Sedang Menyimpan Perubahan" : "Simpan Perubahan"}</span>
                     {isLoading && <ActionIcon className="w-4 h-4 animate-spin" name="loading" />}
@@ -253,11 +253,39 @@ export default function ProfilePage() {
                                         File: file,
                                         url: newURL,
                                     })
+                                    setProfile(prev => {
+                                        if(!prev) return prev
+                                        return {
+                                            ...prev,
+                                            ...{
+                                                user : {
+                                                    ...prev.user,
+                                                    ...{
+                                                        image_url : newURL
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    })
                                 } else {
                                     setAvatarImage({
                                         Ischanged: false,
                                         File: null,
                                         url: null,
+                                    })
+                                    setProfile(prev => {
+                                        if(!prev) return prev
+                                        return {
+                                            ...prev,
+                                            ...{
+                                                user : {
+                                                    ...prev.user,
+                                                    ...{
+                                                        image_url : ""
+                                                    }
+                                                }
+                                            }
+                                        }
                                     })
                                 }
                             }}

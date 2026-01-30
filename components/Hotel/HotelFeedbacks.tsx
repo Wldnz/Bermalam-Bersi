@@ -14,7 +14,7 @@ export default function HotelFeedbacks({
 
     const [ currentFeedback, setCurrentFeedback ] = useState<FeedbackHotel | null>(null)
 
-    return <div className="flex flex-col justify-between gap-20" id="feedbacks">
+    return feedbacks?.length && <div className="flex flex-col justify-between gap-20" id="feedbacks">
         <div className="flex flex-col gap-2">
             <h2 className="font-bold text-center text-3xl">Kamu Mungkin Penasaran Dengan Pengalaman Tamu Sebelumbya?</h2>
             <p className="text-lg text-center">Dibawah ini  adalah pengalaman - pengalaman dari tamu sebelumnya!</p>

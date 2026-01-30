@@ -143,7 +143,7 @@ function SecondtHotelCard({ hotel, bookingDate }: { hotel: Hotel, bookingDate : 
         href={`/hotels/${hotel.id}?${CreateQueryFindHotels(bookingDate)}`}
     >
         <Image
-            className="rounded-lg"
+            className="w-80 h-60 rounded-lg"
             width={300}
             height={20}
             src={hotel.image_url}
@@ -198,7 +198,7 @@ function DefaultHotelCard({ hotel, bookingDate}: { hotel: Hotel, bookingDate : B
         href={`/hotels/${hotel.id}?${CreateQueryFindHotels(bookingDate)}`}
     >
         <Image
-            className="h-60 rounded-lg"
+            className="w-60 h-60 rounded-lg object-fill"
             width={300}
             height={20}
             src={hotel.image_url}

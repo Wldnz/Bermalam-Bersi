@@ -200,8 +200,8 @@ export default function DetailHotel() {
             <span>Home/ Hotels/ {dataHotel?.name}</span>
 
             {/* summary booking date */}
-                
-            
+
+
 
             {/* cart  */}
 
@@ -432,16 +432,7 @@ export default function DetailHotel() {
             </div> : <></>}
 
             {/* images here */}
-            {dataHotel.images.length && <div className="w-full overflow-x-scroll flex gap-2.5">
-                {dataHotel.images.map((image, index) => {
-                    return <Image
-                        src={image.url}
-                        width={500}
-                        height={500}
-                        alt="miaw"
-                        key={image.url + index}
-                    />
-                })}
+            {dataHotel.images?.length && <div className="w-full overflow-x-scroll flex gap-2.5">
                 {dataHotel.images.map((image, index) => {
                     return <Image
                         src={image.url}
@@ -478,7 +469,7 @@ export default function DetailHotel() {
 
 
             {/* still need to update in here... */}
-          <HotelFacilities/>
+            <HotelFacilities />
 
             {dataHotel.type_rooms?.length ? <div className="flex flex-col gap-5" id="rooms">
                 <h2 className="font-bold text-xl">Terdapat {dataHotel.type_rooms.length} Tipe Kamar Yang Sesuai</h2>
@@ -509,7 +500,7 @@ export default function DetailHotel() {
                                         <span className="text-sm">Single Bed</span>
                                     </div>
                                 </div>
-                                {dataHotel.facilities.length && <div className="grid grid-cols-2 gap-2">
+                                {dataHotel.facilities?.length && <div className="grid grid-cols-2 gap-2">
                                     {dataHotel.facilities.map((facility, index) => {
                                         return <div className="flex items-center gap-2" key={facility.category_name + index}>
                                             <ActionIcon className="w-5 h-5" name="success" />
@@ -773,7 +764,7 @@ export default function DetailHotel() {
                 <h2 className="text-2xl">Tidak Ada Kamar Yang Tersedia...</h2>
             </div>}
 
-           <HotelAddress/>
+            <HotelAddress />
 
             <div className="flex flex-col gap-10">
                 <div className="flex flex-col gap-2.5">
@@ -793,12 +784,14 @@ export default function DetailHotel() {
             <HotelFaqs faqs={dataHotel.faqs} />
 
             {/* untuk menampilkan hotel - hotel yang mungkin anda suka */}
-            <div className="flex flex-col gap-4">
+            {/* <div className="flex flex-col gap-4">
                 <h2 className="font-bold text-xl">Kamu Mungkin Tertarik Dengan Tempat Bermalam Yang Lain</h2>
                 <div className="flex gap-2.5 flex-wrap">
-                    <div className="w-80 h-100 bg-red-200"></div>
+                    <div className="w-80 h-100">
+                       
+                    </div>
                 </div>
-            </div>
+            </div> */}
 
         </div>
         }
