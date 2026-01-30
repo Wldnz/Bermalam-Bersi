@@ -52,7 +52,7 @@ export default function Hotels() {
         FetchHotels(setHotels, bookingDate)
      }, [])
 
-    return <div className="flex flex-col gap-10">
+    return <div className="flex flex-col gap-10 font-inter">
         
         <Navigation />
         

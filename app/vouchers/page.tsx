@@ -27,7 +27,7 @@ export default function VoucherPage() {
     const [showAlertProps, setShowAlertProps] = useState<ShowAlertProps | undefined>()
 
     const { user } = useUser()
-    
+
     const reloadVouchers = () => {
         getVouchers(setVouchers)
         getUserVouchers(setUserVouchers)
@@ -58,18 +58,18 @@ export default function VoucherPage() {
                 <span className="">Sorry.. we cannot found any available voucher!</span>
             </div>}
 
-            <div className="w-full flex flex-col gap-10 cursor-pointer">
-                    <button className="font-bold text-(--status-done) self-center">Lihat Kupon Yang Kamu Miliki</button>
-                    <span className="font-bold text-xl">Kamu Memiliki {userVouchers.length} Kupon Yang Aktif Nih!</span>
-                {userVouchers && userVouchers.length ? <div className="w-full flex items-center gap-10 overflow-x-scroll">
+            {userVouchers && userVouchers.length ? <div className="w-full flex flex-col gap-10 cursor-pointer">
+                <button className="font-bold text-(--status-done) self-center">Lihat Kupon Yang Kamu Miliki</button>
+                <span className="font-bold text-xl">Kamu Memiliki {userVouchers.length} Kupon Yang Aktif Nih!</span>
+                <div className="w-full flex items-center gap-10 overflow-x-scroll">
                     {/* card kupn */}
                     {userVouchers.map((voucher, index) => {
                         return <UserVoucherCard voucher={voucher} key={`voucher-name-${voucher.name}-voucher-${index}`} />
                     })}
-                </div> : <div className="w-full flex justify-center items-center">
-                    <span className="">Kamu Tidak Miliki Kupon Yang Aktif!</span>
-                </div>}
-            </div>
+                </div>
+            </div> : <div className="w-full flex justify-center items-center">
+                <span className="">Kamu Tidak Miliki Kupon Yang Aktif!</span>
+            </div>}
 
         </div>
     </div>
@@ -82,7 +82,7 @@ const VoucherCard = ({
 }: {
     voucher: VoucherProps,
     setShowAlert: Dispatch<SetStateAction<ShowAlertProps | undefined>>,
-    handler? : () => void
+    handler?: () => void
 }) => {
     return <div className="min-w-80 w-max h-max flex flex-col relative">
         <div className="w-full max-w-80 min-h-80 p-5 flex flex-col justify-between items-center gap-2.5">
@@ -147,7 +147,7 @@ const getUserVouchers = async (
     }
 }
 
-const redeemVoucher = async (id: string | number, setShowAlert: Dispatch<SetStateAction<ShowAlertProps | undefined>>, handler? : () => void) => {
+const redeemVoucher = async (id: string | number, setShowAlert: Dispatch<SetStateAction<ShowAlertProps | undefined>>, handler?: () => void) => {
     try {
         const { data } = await Api().post(`/vouchers/reedem/${id}`)
         SetShowAlertStateAction({
@@ -156,12 +156,12 @@ const redeemVoucher = async (id: string | number, setShowAlert: Dispatch<SetStat
             description: data.message,
             iShowed: true,
         }, setShowAlert)
-        if(handler) handler()
-    } catch(error) {
+        if (handler) handler()
+    } catch (error) {
         const err = error as AxiosErrorCustom
         SetShowAlertStateAction({
-            title: err.status == 500? "Telah Terjadi Kesalahan" : "Informasi",
-            category: err.status == 500? "error" : "information",
+            title: err.status == 500 ? "Telah Terjadi Kesalahan" : "Informasi",
+            category: err.status == 500 ? "error" : "information",
             description: err.response.data.message,
             iShowed: true,
         }, setShowAlert)
