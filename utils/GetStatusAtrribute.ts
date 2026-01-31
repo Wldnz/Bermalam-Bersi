@@ -28,10 +28,13 @@ export function GetStatusAttributeTransaction(status: string) : StatusTransactio
             iconName: "close_outline",
             label: "Gagal",
             className: "text-(--status-reject) border-(--status-reject)",
-            status: [
-                "cancelled",
-                "failed"
-            ]
+            status: "failed"
+        },
+        {
+             iconName: "close_outline",
+            label: "Dibatalkan",
+            className: "text-(--status-reject) border-(--status-reject)",
+            status: "cancelled"
         }
     ]
 

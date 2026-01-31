@@ -41,13 +41,14 @@ export function MiddlewareProvider({
                 }
             }
         }
+        abc()
 
         // if(user && router && currentPahtName && currentPahtName.startsWith("/auth/sign-")){
         //     router.push("/")
         // }
 
 
-    }, [currentPahtName, router, user])
+    }, [currentPahtName, router, user, GetCurrentCredentials])
     return <MiddlewareContext.Provider value={undefined}>
         {children}
     </MiddlewareContext.Provider>

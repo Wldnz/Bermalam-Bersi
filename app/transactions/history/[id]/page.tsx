@@ -4,6 +4,7 @@ import Navigation from "@/components/Navigation";
 import ShowAlert from "@/components/ShowAlert";
 import { useBooking } from "@/context/Booking";
 import { useUser } from "@/context/UserContext";
+import { AxiosErrorCustom } from "@/models/Models";
 import { ShowAlertProps } from "@/models/ShowAlertProps";
 import StatusTransactionOrBookingProps from "@/models/StatusTransactionOrBooking";
 import Api from "@/utils/Api";
@@ -78,8 +79,8 @@ export default function DetailHistory() {
 
     const [statusTransaction, setStatusTransaction] = useState<StatusTransactionOrBookingProps | null>(null)
 
+    const [showAlertProps, setShowAlertProps] = useState<ShowAlertProps | undefined>()
 
-    const [ currentAdditionalRequest, setCurrentAdditionalRequest ] = useState<ShowAlertProps | undefined>()
 
     const { id } = useParams()
 
@@ -96,8 +97,10 @@ export default function DetailHistory() {
                 setTransaction(undefined)
             }
         }
-        fetchTransactions()
-    }, [id])
+        if (!statusTransaction) {
+            fetchTransactions()
+        }
+    }, [id, statusTransaction])
 
 
 
@@ -108,13 +111,37 @@ export default function DetailHistory() {
         </div>
     }
 
+    const cancelTheTransaction = async () => {
+        try {
+            const { data } = await Api().post(`/transactions/cancel/${id}`)
+            SetShowAlertStateAction({
+                title: "Berhasil Membatalkan Transaksi!",
+                description: data.message,
+                category: "success",
+                iShowed: true,
+            }, setShowAlertProps)
+            setStatusTransaction(null)
+        } catch (err) {
+            const error = err as AxiosErrorCustom
+            SetShowAlertStateAction({
+                title: error.status === 500 ? "Telah Terjadi Kesalahan" : "Pemberitahuan",
+                description: error.response.data.message,
+                category: error.status === 500 ? "error" : "information",
+                iShowed: true,
+            }, setShowAlertProps)
+        } finally {
+
+        }
+    }
+
     return <div className="w-full min-h-dvh flex flex-col font-inter bg-background">
         <Navigation />
 
-       { currentAdditionalRequest && currentAdditionalRequest.iShowed &&  <ShowAlert
-            showedAlertProps={currentAdditionalRequest}
-            setShowedAlertProps={setCurrentAdditionalRequest}
-        /> }
+
+        {showAlertProps && showAlertProps.iShowed && <ShowAlert
+            showedAlertProps={showAlertProps}
+            setShowedAlertProps={setShowAlertProps}
+        />}
 
         <div className="w-full h-10"></div>
         <div className="w-full flex justify-center min-h-dvh p-5">
@@ -131,7 +158,7 @@ export default function DetailHistory() {
                             </div>
                             {statusTransaction && <div className={`flex items-center gap-2.5 p-1 px-2 border-2 ${statusTransaction.className} rounded-lg`}>
                                 <ActionIcon className="w-6 h-6" name={statusTransaction.iconName} />
-                                <span className="font-bold">{ statusTransaction.label }</span>
+                                <span className="font-bold">{statusTransaction.label}</span>
                             </div>}
                         </div>
 
@@ -188,7 +215,7 @@ export default function DetailHistory() {
                             </div>
                             <div className="w-full flex justify-between items-center">
                                 <span className="text-sm">Jenis Pembayaran</span>
-                                <span className="text-sm">{transaction.transaction.payment_type}</span>
+                                <span className="text-sm">{transaction.transaction.payment_type ? transaction.transaction.payment_type : "Belum bayar"}</span>
                             </div>
                             <div className="w-full flex justify-between items-center">
                                 <span className="text-sm">Kategori Pembayaran</span>
@@ -215,11 +242,11 @@ export default function DetailHistory() {
                             </div>
                             <div className="w-full flex justify-between items-center">
                                 <span className="text-sm">Check-In</span>
-                                <span className="text-sm">{convertNumberIntoIDR(Number(transaction.transaction.check_in_at))}</span>
+                                <span className="text-sm">{GetLabelDate(new Date(Number(transaction.transaction.check_in_at)))}</span>
                             </div>
                             <div className="w-full flex justify-between items-center">
                                 <span className="text-sm">Check-Out</span>
-                                <span className="text-sm">{convertNumberIntoIDR(Number(transaction.transaction.check_out_at))}</span>
+                                <span className="text-sm">{GetLabelDate(new Date(Number(transaction.transaction.check_out_at)))}</span>
                             </div>
                             <div className="w-full flex justify-between items-center">
                                 <span className="text-sm">Jumlah Tamu</span>
@@ -255,7 +282,24 @@ export default function DetailHistory() {
                             >
                                 Bayar Sekarang
                             </Link>
-                            <button className="w-full border-2 border-(--status-refund) text-(--status-refund) bg-background font-bold p-3 rounded-lg cursor-pointer text-center">
+                            <button className="w-full border-2 border-(--status-refund) text-(--status-refund) bg-background font-bold p-3 rounded-lg cursor-pointer text-center"
+                                onClick={() => SetShowAlertStateAction({
+                                    title: "Apakah anda yakin ingin membatalkan pemesanan ini?",
+                                    description: "Pemesanan akan langsung dibatalkan, dan anda bisa membuatnya kembali nanti!",
+                                    category: "information",
+                                    actions: [
+                                        {
+                                            label: "Ya, Batalkan Transaksi",
+                                            handler: cancelTheTransaction
+                                        }
+                                    ],
+                                    closeAction: {
+                                        label: "Tidak, Tutup Pemberitahuan",
+                                        handler: () => { }
+                                    },
+                                    iShowed: true,
+                                }, setShowAlertProps)}
+                            >
                                 Batalkan Transaksi
                             </button>
                         </>}
@@ -315,11 +359,11 @@ export default function DetailHistory() {
                                 <button className="text-sm text-(--status-refund) cursor-pointer"
                                     onClick={() => SetShowAlertStateAction({
                                         title: "Permitan Tambahan",
-                                        description: booking.note? booking.note : `${booking.person_name} Tidak Memiliki Permintaan Tambahan`,
-                                        category:"information",
-                                        actions : [],
-                                        iShowed : true,
-                                    }, setCurrentAdditionalRequest)}
+                                        description: booking.note ? booking.note : `${booking.person_name} Tidak Memiliki Permintaan Tambahan`,
+                                        category: "information",
+                                        actions: [],
+                                        iShowed: true,
+                                    }, setShowAlertProps)}
                                 >Lihat Permintaan Tambahan</button>
                             </div>
                         </div>

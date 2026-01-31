@@ -11,11 +11,13 @@ export default function SummaryBookingDate({
     setBookingDate,
     showPopup,
     setShowPopup,
+    handler
 }: {
     bookingDate: BookingState,
     setBookingDate: Dispatch<SetStateAction<BookingState>>,
     showPopup: ShowPopupProps,
-    setShowPopup: Dispatch<SetStateAction<ShowPopupProps>>
+    setShowPopup: Dispatch<SetStateAction<ShowPopupProps>>,
+    handler : () => void
 }) {
     const [show, setShow] = useState<boolean>(false)
 
@@ -38,7 +40,7 @@ export default function SummaryBookingDate({
                 showPopup={showPopup}
             />
             <button className="p-2.5 bg-(--status-refund) text-background font-bold rounded-lg cursor-pointer"
-                // onClick={() => fetchDetailHotel()}
+                onClick={handler}
             >Simpan Perubahan</button>
         </div>}
         <button className="w-max p-2 bg-white border-3 border-(--status-refund) rounded-lg rounded-t-none absolute -bottom-10.25 -left-[2.5px] cursor-pointer"

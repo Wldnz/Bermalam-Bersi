@@ -4,6 +4,7 @@ import HotelAddress from "@/components/Hotel/HotelAddress"
 import HotelFacilities from "@/components/Hotel/HotelFacilities"
 import HotelFaqs from "@/components/Hotel/HotelFaqs"
 import HotelFeedbacks from "@/components/Hotel/HotelFeedbacks"
+import SummaryBookingDate from "@/components/Hotel/SummaryBookingDate"
 import ActionIcon from "@/components/Icons/Action"
 import BookingIcons from "@/components/Icons/Booking"
 import HotelIcons from "@/components/Icons/Hotel"
@@ -201,7 +202,13 @@ export default function DetailHotel() {
 
             {/* summary booking date */}
 
-
+            <SummaryBookingDate
+                bookingDate={bookingDate}
+                setBookingDate={setBookingDate}
+                setShowPopup={setShowPopUp}
+                showPopup={showPopUp}
+                handler={fetchDetailHotel}
+            />
 
             {/* cart  */}
 
