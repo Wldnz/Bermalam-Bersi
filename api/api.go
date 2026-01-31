@@ -90,6 +90,7 @@ func InitiliazeApi(g *gin.Engine) {
 
 	g.GET("/transactions", guest_transactions.HistoryTransactions)
 	g.GET("/transactions/:id", guest_transactions.DetailTransaction)
+	g.POST("/transactions/cancel/:id", guest_transactions.CancelTheTransaction)
 
 	g.GET("/faqs", guest_faqs.GetFAQS)
 

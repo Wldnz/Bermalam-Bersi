@@ -108,6 +108,7 @@ CREATE TABLE `hotel_room_bookings` (
   `id_hotel_room` int,
   `check_in_at` bigint NOT NULL,
   `check_out_at` bigint NOT NULL,
+  `status` ENUM ( 'pending', 'completed', 'cancelled' ) DEFAULT 'cancelled',
   `created_at` bigint NOT NULL,
   `updated_at` bigint NOT NULL,
   `created_by` int,

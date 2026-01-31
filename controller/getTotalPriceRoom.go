@@ -97,6 +97,7 @@ func GetTotalPriceRoom(
 				LEFT JOIN hotel_rooms hr ON hr.id_type_room = htr.id AND hr.status = 'available' AND hr.id NOT IN (
 					SELECT id_hotel_room FROM hotel_room_bookings
 					WHERE NOT (check_out_at <=  ?  OR check_in_at >= ?) # pertama '?' check_in kedua check_out
+					AND status = 'pending'
 				) 
 				WHERE htr.id=?
 				GROUP BY htr.id

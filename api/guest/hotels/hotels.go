@@ -117,6 +117,7 @@ func FindHotels(c *gin.Context) {
 		INNER JOIN hotel_rooms hr ON hr.id_type_room = htr.id AND hr.id NOT IN (
 			SELECT id_hotel_room FROM hotel_room_bookings
 			WHERE NOT (check_out_at <=  ?  OR check_in_at >= ?) # pertama '?' check_in kedua check_out
+			AND status = 'pending'
 		)
 		INNER JOIN hotel_type_room_price_period htrpp ON htrpp.id_type_room = htr.id
 		INNER JOIN hotel_type_room_dynamic_price htrdp ON htrdp.id_price_period = htrpp.id AND htrpp.default = 1
